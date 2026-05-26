@@ -4,6 +4,7 @@ import { Briefcase, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Toggl
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
 import { dummyJobs } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Job = {
@@ -28,7 +29,9 @@ export default function AdminLowonganPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    // no-op for static demo
+    setLoading(true);
+    setJobs(await fetchJson('/api/jobs', dummyJobs as any[]));
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
@@ -36,22 +39,32 @@ export default function AdminLowonganPage() {
   async function save() {
     if (!form.title || !form.company) return;
     setSaving(true); setError('');
-    setTimeout(() => {
-      if (editId) {
-        setJobs(prev => prev.map(j => j.id === editId ? { ...j, ...form } as any : j));
-      } else {
-        setJobs(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...form } as any, ...prev]);
-      }
-      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
-    }, 500);
+    const res = await fetch('/api/jobs', {
+      method: editId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editId ? { id: editId, ...form } : form),
+    });
+    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...form };
+    if (editId) {
+      setJobs(prev => prev.map(j => j.id === editId ? { ...j, ...saved } as any : j));
+    } else {
+      setJobs(prev => [saved as any, ...prev]);
+    }
+    setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
   }
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
+    await fetch(`/api/jobs?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
     setJobs(prev => prev.filter(j => j.id !== id));
   }
 
   async function toggleActive(id: string, current: boolean) {
+    await fetch('/api/jobs', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_active: !current }),
+    }).catch(() => undefined);
     setJobs(prev => prev.map(j => j.id === id ? { ...j, is_active: !current } : j));
   }
 

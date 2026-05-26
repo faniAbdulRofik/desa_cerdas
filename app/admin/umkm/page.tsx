@@ -8,6 +8,7 @@ import AddProductModal from '@/components/admin/AddProductModal';
 import { dummyProducts } from '@/lib/dummy-data';
 import { formatRupiah } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { fetchJson } from '@/lib/api-client';
 
 export default function AdminUMKMPage() {
   const t = useTranslations('admin_umkm');
@@ -16,11 +17,19 @@ export default function AdminUMKMPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
-    // no-op for static demo
+    let mounted = true;
+    setLoading(true);
+    fetchJson('/api/products', dummyProducts).then((data) => {
+      if (!mounted) return;
+      setProducts(data);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
   }, []);
 
   async function deleteProduct(id: string) {
     if (confirm(t('confirm_delete'))) {
+      await fetch(`/api/products?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
       setProducts((p) => p.filter((prod) => prod.id !== id));
     }
   }

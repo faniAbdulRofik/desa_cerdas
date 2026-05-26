@@ -10,6 +10,7 @@ import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { ReportCard } from '@/components/ui/ReportCard';
 import { useTranslations } from 'next-intl';
 import { dummyReports } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 export default function LaporanPage() {
   const t = useTranslations('laporan');
@@ -30,12 +31,13 @@ export default function LaporanPage() {
   const [status, setStatus] = useState('Semua');
 
   useEffect(() => {
-    // Simulate network load
-    const timer = setTimeout(() => {
-      setReports(dummyReports);
+    let mounted = true;
+    fetchJson('/api/reports', dummyReports).then((data) => {
+      if (!mounted) return;
+      setReports(data);
       setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    });
+    return () => { mounted = false; };
   }, []);
 
   const filtered = reports.filter((r) => {

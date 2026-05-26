@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { formatRupiah } from '@/lib/utils';
 import Image from 'next/image';
+import { fetchJson } from '@/lib/api-client';
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: 'Menunggu Bayar', color: 'text-amber-800', bg: 'bg-amber-50 border-amber-200' },
@@ -54,12 +55,25 @@ export default function SellerOrdersPage() {
   const [photoModal, setPhotoModal] = useState<{open: boolean, photoUrl: string}>({open: false, photoUrl: ''});
 
   useEffect(() => {
-    setOrders(dummyOrders);
+    let mounted = true;
+    fetchJson('/api/orders?store_id=dummy-store-1', dummyOrders).then((data) => {
+      if (mounted) setOrders(data);
+    });
+    return () => { mounted = false; };
   }, []);
 
   async function updateOrderStatus(orderId: string, newStatus: string, additionalPayload: any = {}) {
     setUpdating(orderId);
-    await new Promise(r => setTimeout(r, 800)); // Simulating API call
+    await fetch('/api/orders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_id: orderId,
+        status: newStatus,
+        awb_number: newStatus === 'dikirim' ? awbInputs[orderId] : undefined,
+        ...additionalPayload,
+      }),
+    }).catch(() => undefined);
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, ...additionalPayload } : o));
     if (newStatus === 'dikirim' && awbInputs[orderId]) {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, awb_number: awbInputs[orderId] } : o));
@@ -70,7 +84,17 @@ export default function SellerOrdersPage() {
   async function handleSellerCancel() {
     if (!cancelModal.reason) return alert('Silakan isi alasan pembatalan');
     setUpdating(cancelModal.orderId);
-    await new Promise(r => setTimeout(r, 800));
+    await fetch('/api/orders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_id: cancelModal.orderId,
+        status: 'dibatalkan',
+        cancellation_reason: cancelModal.reason,
+        cancellation_requested_by: 'seller',
+        cancellation_status: 'approved',
+      }),
+    }).catch(() => undefined);
     setOrders(prev => prev.map(o => o.id === cancelModal.orderId ? { 
       ...o, status: 'dibatalkan', cancellation_reason: cancelModal.reason, 
       cancellation_requested_by: 'seller', cancellation_status: 'approved' 

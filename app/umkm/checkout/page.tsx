@@ -72,8 +72,19 @@ export default function CheckoutPage() {
      if (!form.city) return alert("Pilih kota tujuan terlebih dahulu");
      setShippingLoading(true);
      try {
-       await new Promise(r => setTimeout(r, 600)); // Simulasi API RajaOngkir
-       setShippingCost(15000 + Math.floor(Math.random() * 10000) - (Math.floor(Math.random() * 10000) % 1000) ); // randomized 15k - 25k
+       const res = await fetch('/api/shipping', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           origin: '1101',
+           destination: selectedCityId || form.city,
+           weight: Math.max(1000, items.reduce((sum, item) => sum + item.quantity * 500, 0)),
+           courier: form.courier,
+         }),
+       });
+       const costs = res.ok ? await res.json() : [];
+       const firstCost = costs?.[0]?.cost?.[0]?.value;
+       setShippingCost(Number(firstCost) || 15000);
      } catch (e) {
        setShippingCost(15000);
      } finally {
@@ -87,24 +98,46 @@ export default function CheckoutPage() {
 
      setLoading(true);
      try {
-       await new Promise(r => setTimeout(r, 800)); // Simulasi koneksi backend
-       const dummyOrderId = 'ORD-' + Math.floor(Math.random() * 900000 + 100000);
+       const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+             buyer_id: user?.id || 'guest',
+             store_id: items[0]?.product.store_id,
+             total_amount: grandTotal,
+             payment_method: form.paymentMethod,
+             customer_details: {
+                first_name: form.name,
+                phone: form.phone,
+                address: form.address,
+                city: form.city,
+                shipping_cost: shippingCost,
+             },
+             items: items.map((item) => ({
+                id: item.product.id,
+                name: item.product.name,
+                price: item.product.price,
+                quantity: item.quantity,
+             })),
+          }),
+       });
+       const data = await response.json();
+       if (!response.ok) throw new Error(data.error || 'Gagal membuat pesanan');
 
-       if (form.paymentMethod === 'cod') {
+       if (form.paymentMethod === 'cod' || data.token === 'MIDTRANS_NOT_CONFIGURED') {
           clear();
-          window.location.href = `/umkm/pesanan?id=${dummyOrderId}&status=success`;
+          window.location.href = `/umkm/pesanan?id=${data.order_id}&status=success`;
           return;
        }
        
-       // Simulasi Midtrans since we don't have a backend generate token
-       if (form.paymentMethod === 'midtrans') {
-          alert('SIMULASI: Membuka popup pembayaran Midtrans (Static Mode). Mengarahkan ke halaman sukses...');
+       if (form.paymentMethod === 'midtrans' && data.redirect_url) {
           clear();
-          window.location.href = `/umkm/pesanan?id=${dummyOrderId}&status=success`;
+          window.location.href = data.redirect_url;
           return;
        }
      } catch (e: any) {
        alert("Terjadi kesalahan saat checkout: " + e.message);
+     } finally {
        setLoading(false);
      }
   }

@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Store, CheckCircle, XCircle, Loader2, Clock, Activity, Power, PowerOff, RefreshCw } from 'lucide-react';
+import { fetchJson } from '@/lib/api-client';
 
 export default function AdminStoreApprovalPage() {
   const [stores, setStores] = useState<any[]>([]);
@@ -12,21 +13,26 @@ export default function AdminStoreApprovalPage() {
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate network load
-    const timer = setTimeout(() => {
-      setStores([
+    let mounted = true;
+    fetchJson('/api/stores', [
         { id: '1', name: 'Toko Berkah', description: 'Menjual barang sembako', user_id: 'warga_1', status: 'active', created_at: new Date().toISOString() },
         { id: '2', name: 'Kerajinan Tangan Desa', description: 'Produk anyaman bambu asli', user_id: 'warga_2', status: 'pending', created_at: new Date().toISOString() },
         { id: '3', name: 'Kue Basah Ibu Ani', description: 'Aneka kue basah tradisional', user_id: 'warga_3', status: 'rejected', created_at: new Date(Date.now() - 86400000).toISOString() },
-      ]);
+      ]).then((data) => {
+      if (!mounted) return;
+      setStores(data);
       setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    });
+    return () => { mounted = false; };
   }, []);
 
   async function updateStoreStatus(storeId: string, status: 'active' | 'rejected' | 'pending') {
     setUpdating(storeId);
-    await new Promise(r => setTimeout(r, 600)); // Simulasi API
+    await fetch(`/api/stores/${storeId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).catch(() => undefined);
     setStores((prev) => prev.map((s) => (s.id === storeId ? { ...s, status } : s)));
     setUpdating(null);
   }

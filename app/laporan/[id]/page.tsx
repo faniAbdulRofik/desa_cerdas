@@ -17,6 +17,7 @@ import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
 import { AISolutionCard } from '@/components/ui/AISolutionCard';
 import { ReportTimeline } from '@/components/ui/ReportTimeline';
 import { formatRelativeTime } from '@/lib/utils';
+import { fetchJson } from '@/lib/api-client';
 
 type Comment = {
   id: string;
@@ -41,6 +42,7 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
+  const [history, setHistory] = useState(dummyReportHistory.filter((h) => h.report_id === id));
 
   // Share state
   const [shareOpen, setShareOpen] = useState(false);
@@ -50,7 +52,7 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   // Load report
   useEffect(() => {
     async function load() {
-      const data = dummyReports.find(r => r.id === id);
+      const data = await fetchJson(`/api/reports/${id}`, dummyReports.find(r => r.id === id) ?? null);
       if (data) setReport(data);
       setLoading(false);
     }
@@ -59,15 +61,32 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
 
   // Load likes
   useEffect(() => {
-    setLikeCount(12);
-    setLiked(false);
+    let mounted = true;
+    fetchJson(`/api/reports/${id}/likes`, { count: 0, liked: false }).then((data) => {
+      if (!mounted) return;
+      setLikeCount(data.count);
+      setLiked(data.liked);
+    });
+    return () => { mounted = false; };
   }, [id]);
 
   // Load comments
   useEffect(() => {
-    setComments([
-       { id: '1', report_id: id, user_id: 'u1', author_name: 'Budi Santoso', content: 'Semoga cepat ditangani oleh pihak berwenang.', created_at: new Date(Date.now() - 3600000).toISOString() }
-    ]);
+    let mounted = true;
+    fetchJson(`/api/reports/${id}/comments`, [
+      { id: '1', report_id: id, user_id: 'u1', author_name: 'Budi Santoso', content: 'Semoga cepat ditangani oleh pihak berwenang.', created_at: new Date(Date.now() - 3600000).toISOString() }
+    ]).then((data) => {
+      if (mounted) setComments(data);
+    });
+    return () => { mounted = false; };
+  }, [id]);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson(`/api/reports/${id}/history`, dummyReportHistory.filter((h) => h.report_id === id)).then((data) => {
+      if (mounted) setHistory(data);
+    });
+    return () => { mounted = false; };
   }, [id]);
 
   // Close share dropdown on outside click
@@ -84,22 +103,40 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   // Toggle like
   async function handleLike() {
     setLiking(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/reports/${id}/likes`, {
+        method: liked ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: 'anonymous' }),
+      });
+      const data = await res.json();
+      setLiked(data.liked ?? !liked);
+      setLikeCount(data.count ?? (liked ? likeCount - 1 : likeCount + 1));
+    } catch {
       setLiked(!liked);
       setLikeCount(prev => liked ? prev - 1 : prev + 1);
+    } finally {
       setLiking(false);
-    }, 500);
+    }
   }
 
   // Post comment
   async function handlePostComment() {
     if (!commentText.trim()) return;
     setSendingComment(true);
-    setTimeout(() => {
-      setComments((prev) => [...prev, { id: Math.random().toString(), report_id: id, user_id: 'me', author_name: 'Warga', content: commentText, created_at: new Date().toISOString() }]);
+    try {
+      const fallback = { id: Math.random().toString(), report_id: id, user_id: 'me', author_name: 'Warga', content: commentText, created_at: new Date().toISOString() };
+      const res = await fetch(`/api/reports/${id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fallback),
+      });
+      const saved = res.ok ? await res.json() : fallback;
+      setComments((prev) => [...prev, saved]);
       setCommentText('');
+    } finally {
       setSendingComment(false);
-    }, 500);
+    }
   }
 
   // Share helpers
@@ -159,8 +196,6 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   if (loading) return <DetailSkeleton />;
 
   if (!report) return notFound();
-
-  const history = dummyReportHistory.filter((h) => h.report_id === id);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">

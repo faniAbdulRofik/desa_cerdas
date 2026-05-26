@@ -4,6 +4,7 @@ import { Landmark, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil } from 
 import { TableSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
 import { dummyProjects } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Project = {
@@ -54,7 +55,9 @@ export default function AdminTransparansiPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    // no-op for static demo
+    setLoading(true);
+    setProjects(await fetchJson('/api/projects', dummyProjects as any[]));
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
@@ -62,19 +65,24 @@ export default function AdminTransparansiPage() {
   async function save() {
     if (!form.title) return;
     setSaving(true); setError('');
-    setTimeout(() => {
-      const payload = { ...form, budget: Number(form.budget), spent: Number(form.spent), progress: Number(form.progress) };
-      if (editId) {
-        setProjects(prev => prev.map(p => p.id === editId ? { ...p, ...payload } as any : p));
-      } else {
-        setProjects(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...payload } as any, ...prev]);
-      }
-      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
-    }, 500);
+    const payload = { ...form, budget: Number(form.budget), spent: Number(form.spent), progress: Number(form.progress) };
+    const res = await fetch('/api/projects', {
+      method: editId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editId ? { id: editId, ...payload } : payload),
+    });
+    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...payload };
+    if (editId) {
+      setProjects(prev => prev.map(p => p.id === editId ? { ...p, ...saved } as any : p));
+    } else {
+      setProjects(prev => [saved as any, ...prev]);
+    }
+    setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
   }
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
+    await fetch(`/api/projects?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
     setProjects(prev => prev.filter(p => p.id !== id));
   }
 

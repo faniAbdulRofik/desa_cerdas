@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Raleway } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -7,8 +6,6 @@ import { SOSButton } from '@/components/ui/SOSButton';
 import { CartProvider } from '@/components/marketplace/CartContext';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
-
-const raleway = Raleway({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'DesaMind — Platform Desa Cerdas',
@@ -22,7 +19,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale}>
-      <body className={`flex flex-col min-h-screen bg-bg ${raleway.className}`}>
+      <body className="flex flex-col min-h-screen bg-bg font-sans">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <CartProvider>
             <Navbar />

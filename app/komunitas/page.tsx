@@ -1,15 +1,24 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MessageCircle, Book } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { dummyArticles } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 export default function KomunitasPage() {
-  const [articles] = useState(dummyArticles);
+  const [articles, setArticles] = useState(dummyArticles);
   const [tab, setTab] = useState<'diskusi' | 'artikel'>('artikel');
   const t = useTranslations('community');
   const locale = useLocale();
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/articles', dummyArticles).then((data) => {
+      if (mounted) setArticles(data);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   function getRelativeTime(dateStr: string) {
     const diff = Date.now() - new Date(dateStr).getTime();

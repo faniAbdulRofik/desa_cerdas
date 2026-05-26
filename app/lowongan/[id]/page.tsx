@@ -1,14 +1,28 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Briefcase, MapPin, Clock, Phone, Building } from 'lucide-react';
-import { dummyJobs } from '@/lib/dummy-data';
+import { dummyJobs, type Job } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 export default function LowonganDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const job = dummyJobs.find((j) => j.id === id);
+  const [job, setJob] = useState<Job | null>(dummyJobs.find((j) => j.id === id) ?? null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson<Job | null>(`/api/jobs/${id}`, dummyJobs.find((j) => j.id === id) ?? null).then((data) => {
+      if (!mounted) return;
+      setJob(data);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [id]);
+
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-sm text-gray-500">Memuat lowongan...</div>;
   if (!job) notFound();
 
   const isExpiring = job.deadline ? new Date(job.deadline) <= new Date(Date.now() + 7 * 86400000) : false;

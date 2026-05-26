@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Suspense, useState, useEffect } from 'react';
 import { formatRupiah } from '@/lib/utils';
+import { fetchJson } from '@/lib/api-client';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: 'Menunggu Bayar', color: 'bg-amber-50 text-amber-800 border-amber-200', icon: Clock },
@@ -46,13 +47,26 @@ function OrderList() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    setOrders(dummyOrders);
+    let mounted = true;
+    fetchJson('/api/orders?buyer_id=user-warga', dummyOrders).then((data) => {
+      if (mounted) setOrders(data);
+    });
+    return () => { mounted = false; };
   }, []);
 
   async function submitCancel() {
     if (!cancelModal.reason) return alert('Pilih atau tulis alasan pembatalan');
     setActionLoading(true);
-    await new Promise(r => setTimeout(r, 800));
+    await fetch('/api/orders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_id: cancelModal.orderId,
+        cancellation_status: 'requested',
+        cancellation_reason: cancelModal.reason,
+        cancellation_requested_by: 'buyer',
+      }),
+    }).catch(() => undefined);
     setOrders(prev => prev.map(o => o.id === cancelModal.orderId ? { ...o, cancellation_status: 'requested', cancellation_reason: cancelModal.reason } : o));
     setCancelModal({open: false, orderId: '', reason: ''});
     setActionLoading(false);
@@ -70,7 +84,15 @@ function OrderList() {
   async function submitComplete() {
     if (!completeModal.photoBase64) return alert('Silakan unggah foto bukti terima barang');
     setActionLoading(true);
-    await new Promise(r => setTimeout(r, 800));
+    await fetch('/api/orders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_id: completeModal.orderId,
+        status: 'selesai',
+        completion_photo_base64: completeModal.photoBase64,
+      }),
+    }).catch(() => undefined);
     setOrders(prev => prev.map(o => o.id === completeModal.orderId ? { ...o, status: 'selesai', completion_photo_base64: completeModal.photoBase64 } : o));
     setCompleteModal({open: false, orderId: '', photoBase64: ''});
     setActionLoading(false);
@@ -78,7 +100,17 @@ function OrderList() {
 
   async function submitReview() {
     setActionLoading(true);
-    await new Promise(r => setTimeout(r, 800));
+    await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_id: reviewModal.orderId,
+        product_id: reviewModal.productId,
+        buyer_id: 'user-warga',
+        rating: reviewModal.rating,
+        comment: reviewModal.comment,
+      }),
+    }).catch(() => undefined);
     setOrders(prev => prev.map(o => o.id === reviewModal.orderId ? { ...o, is_reviewed: true } : o));
     setReviewModal({open: false, orderId: '', productId: '', rating: 5, comment: ''});
     setActionLoading(false);

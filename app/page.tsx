@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   MessageSquare, Bot, ShoppingBag, 
   GraduationCap, Users, ShieldCheck,
@@ -12,16 +12,30 @@ import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { ReportCard } from '@/components/ui/ReportCard';
 import { useTranslations } from 'next-intl';
 import { dummyReports, dummyStats } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 export default function HomePage() {
   const t = useTranslations('home');
-  const latestReports = dummyReports.slice(0, 4);
-  const stats = {
+  const [latestReports, setLatestReports] = useState(dummyReports.slice(0, 4));
+  const [stats, setStats] = useState({
     reports: dummyStats.totalReports,
     products: dummyStats.activeUMKM,
     resolved: dummyStats.completedReports,
-  };
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    Promise.all([
+      fetchJson('/api/reports?limit=4', dummyReports.slice(0, 4)),
+      fetchJson('/api/stats', stats),
+    ]).then(([reportsData, statsData]) => {
+      if (!mounted) return;
+      setLatestReports(reportsData);
+      setStats(statsData);
+    });
+    return () => { mounted = false; };
+  }, []);
 
 
 

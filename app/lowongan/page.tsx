@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Briefcase, MapPin, Clock, Phone, Search, ArrowRight, CheckCircle } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import { dummyJobs } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Job = {
@@ -57,9 +58,17 @@ export default function LowonganPage() {
   const locale = useLocale();
   const CATEGORIES = [t('cat_all'), t('cat_industry'), t('cat_gov'), t('cat_digital'), t('cat_agri'), t('cat_edu')];
   
-  const [jobs] = useState<Job[]>(dummyJobs as any[]);
+  const [jobs, setJobs] = useState<Job[]>(dummyJobs as any[]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/jobs', dummyJobs as any[]).then((data) => {
+      if (mounted) setJobs(data);
+    });
+    return () => { mounted = false; };
+  }, []);
 
 
   const filtered = jobs.filter(j => {

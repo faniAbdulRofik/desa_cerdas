@@ -163,6 +163,58 @@ export const dummyProducts: Product[] = [
   { id: 'p8', user_id: 'user-14', seller_name: 'Ibu Lastri', name: 'Jamu Kunyit Asam Tradisional', description: 'Jamu tradisional kunyit asam, baik untuk pencernaan dan daya tahan tubuh. Diproses higienis tanpa bahan kimia.', price: 20000, phone_number: '6288901234567', image_url: 'https://picsum.photos/seed/jamu1/400/300', category: 'Kesehatan', featured: false, sales_count: 178 },
 ];
 
+export const dummyOrders = [
+  {
+    id: 'ORD-1001',
+    buyer_id: 'user-warga',
+    store_id: 'dummy-store-1',
+    status: 'terbayar',
+    total_amount: 50000,
+    buyer_name: 'Budi Santoso',
+    buyer_phone: '081234567890',
+    shipping_address: 'Jl. Merdeka No. 10',
+    payment_method: 'midtrans',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    order_items: [
+      {
+        id: 'item-1001',
+        order_id: 'ORD-1001',
+        product_id: 'p1',
+        quantity: 2,
+        price: 25000,
+        products: { name: 'Keripik Singkong', image_url: 'https://picsum.photos/seed/k1/100/100' },
+      },
+    ],
+    cancellation_status: null,
+  },
+  {
+    id: 'ORD-1002',
+    buyer_id: 'user-warga',
+    store_id: 'dummy-store-1',
+    status: 'dikirim',
+    total_amount: 150000,
+    awb_number: 'RESI123456',
+    buyer_name: 'Siti Aminah',
+    buyer_phone: '081298765432',
+    shipping_address: 'Jl. Pahlawan No. 5',
+    payment_method: 'cod',
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 86400000).toISOString(),
+    order_items: [
+      {
+        id: 'item-1002',
+        order_id: 'ORD-1002',
+        product_id: 'p2',
+        quantity: 1,
+        price: 150000,
+        products: { name: 'Batik Tulis', image_url: 'https://picsum.photos/seed/b1/100/100' },
+      },
+    ],
+    cancellation_status: null,
+  },
+];
+
 // ---- DUMMY ARTICLES ----
 export const dummyArticles: Article[] = [
   { id: 'a1', title: 'Cara Mengurus Surat Keterangan Domisili di Kantor Desa', excerpt: 'Panduan lengkap prosedur dan persyaratan pembuatan surat keterangan domisili untuk warga desa.', image_url: 'https://picsum.photos/seed/article1/600/400', author: 'Tim Pemerintah Desa', category: 'Administrasi', created_at: '2026-03-10T09:00:00Z' },

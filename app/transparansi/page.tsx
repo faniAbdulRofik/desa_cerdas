@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Landmark, Search, Building2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { dummyProjects } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Project = {
@@ -74,8 +75,16 @@ function ProjectCard({ project, t }: { project: Project; t: any }) {
 
 export default function TransparansiPage() {
   const t = useTranslations('transparansi');
-  const [projects] = useState<Project[]>(dummyProjects as any[]);
+  const [projects, setProjects] = useState<Project[]>(dummyProjects as any[]);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/projects', dummyProjects as any[]).then((data) => {
+      if (mounted) setProjects(data);
+    });
+    return () => { mounted = false; };
+  }, []);
 
 
   const filtered = projects.filter(p =>

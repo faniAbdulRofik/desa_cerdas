@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServerClient } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
   try {
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     }
 
     // Update order status in Supabase securely (if available)
+    const supabase = getSupabaseServerClient();
     if (supabase) {
        const { error } = await supabase.from('orders').update({ status: orderStatus }).eq('id', order_id);
        if (error) console.error("Midtrans webhook Supabase error:", error);

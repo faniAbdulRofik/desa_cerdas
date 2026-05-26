@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Users, Calendar, MapPin, ChevronRight, UserPlus, Clock, CheckCircle2, Search } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { dummyActions } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Action = {
@@ -59,9 +60,17 @@ export default function GotongRoyongPage() {
   const locale = useLocale();
   const CATEGORIES = [t('cat_all'), t('cat_env'), t('cat_infra'), t('cat_social'), t('cat_edu'), t('cat_health')];
   
-  const [actions] = useState<Action[]>(dummyActions as any[]);
+  const [actions, setActions] = useState<Action[]>(dummyActions as any[]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/actions', dummyActions as any[]).then((data) => {
+      if (mounted) setActions(data);
+    });
+    return () => { mounted = false; };
+  }, []);
 
 
   const filtered = actions.filter(a => {

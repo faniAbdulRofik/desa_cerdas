@@ -11,6 +11,7 @@ import { dummyProducts } from '@/lib/dummy-data';
 import { useCart } from '@/components/marketplace/CartContext';
 import { formatRupiah } from '@/lib/utils';
 import { useParams } from 'next/navigation';
+import { fetchJson } from '@/lib/api-client';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -24,16 +25,18 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     async function load() {
-      const prod = dummyProducts.find(p => p.id === productId);
-      if (prod) setProduct(prod);
-
-      // dummy reviews
-      setReviews([
-        {
-          id: '1', rating: 5, comment: 'Produk sangat bagus dan sesuai deskripsi.', created_at: new Date().toISOString(),
-          orders: { buyer_name: 'Budi S.' }
-        }
+      const fallback = dummyProducts.find(p => p.id === productId) ?? null;
+      const [prod, productReviews] = await Promise.all([
+        fetchJson(`/api/products/${productId}`, fallback),
+        fetchJson(`/api/reviews?product_id=${productId}`, [
+          {
+            id: '1', rating: 5, comment: 'Produk sangat bagus dan sesuai deskripsi.', created_at: new Date().toISOString(),
+            orders: { buyer_name: 'Budi S.' }
+          }
+        ]),
       ]);
+      if (prod) setProduct(prod);
+      setReviews(productReviews);
       setLoading(false);
     }
     load();

@@ -1,15 +1,29 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Calendar, User, Book } from 'lucide-react';
 import { dummyArticles } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 export default function KomunitasDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const article = dummyArticles.find((a) => a.id === id);
+  const [article, setArticle] = useState<any>(dummyArticles.find((a) => a.id === id) ?? null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson(`/api/articles/${id}`, dummyArticles.find((a) => a.id === id) ?? null).then((data) => {
+      if (!mounted) return;
+      setArticle(data);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [id]);
+
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-sm text-gray-500">Memuat artikel...</div>;
   if (!article) notFound();
 
   return (
