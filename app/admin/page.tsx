@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeletons';
 import { dummyReports, dummyProducts } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 import { StatCard } from '@/components/ui/StatCard';
 import { AIInsightCard } from '@/components/admin/AIInsightCard';
 import { CategoryBarChart, TrendLineChart } from '@/components/admin/DashboardCharts';
@@ -39,7 +40,18 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // no-op for static demo
+    let mounted = true;
+    setLoading(true);
+    Promise.all([
+      fetchJson('/api/dashboard/stats', stats),
+      fetchJson('/api/reports?limit=5', dummyReports.slice(0, 5)),
+    ]).then(([statsData, reportsData]) => {
+      if (!mounted) return;
+      setStats((prev) => ({ ...prev, ...statsData }));
+      setRecentReports(reportsData);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
   }, []);
 
 

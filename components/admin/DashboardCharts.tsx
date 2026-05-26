@@ -16,13 +16,23 @@ import {
   Legend,
 } from 'recharts';
 import { dummyCategoryData, dummyTrendData } from '@/lib/dummy-data';
+import { useEffect, useState } from 'react';
+import { fetchJson } from '@/lib/api-client';
 
 export function CategoryBarChart() {
+  const [data, setData] = useState(dummyCategoryData);
+
+  useEffect(() => {
+    fetchJson('/api/dashboard/stats', { categoryData: dummyCategoryData }).then((stats) => {
+      setData(stats.categoryData ?? dummyCategoryData);
+    });
+  }, []);
+
   return (
     <div className="bg-white p-6 border border-gray-200">
       <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-6">Laporan per Kategori</h3>
       <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={dummyCategoryData} barSize={36}>
+        <BarChart data={data} barSize={36}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="category" tick={{ fontSize: 11, fill: '#6b7280' }} />
           <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
@@ -38,11 +48,19 @@ export function CategoryBarChart() {
 }
 
 export function TrendLineChart() {
+  const [data, setData] = useState(dummyTrendData);
+
+  useEffect(() => {
+    fetchJson('/api/dashboard/stats', { trendData: dummyTrendData }).then((stats) => {
+      setData(stats.trendData ?? dummyTrendData);
+    });
+  }, []);
+
   return (
     <div className="bg-white p-6 border border-gray-200">
       <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-6">Tren Laporan 6 Bulan Terakhir</h3>
       <ResponsiveContainer width="100%" height={220}>
-        <LineChart data={dummyTrendData}>
+        <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} />
           <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />

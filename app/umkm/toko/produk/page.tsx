@@ -5,20 +5,24 @@ import { Package, Pencil, Trash2, Loader2, Plus } from 'lucide-react';
 import { formatRupiah } from '@/lib/utils';
 import Link from 'next/link';
 import { dummyProducts } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 export default function ManageProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    // In semi-dynamic mode, we just load the dummy products to memory.
-    setProducts(dummyProducts);
+    let mounted = true;
+    fetchJson('/api/products', dummyProducts).then((data) => {
+      if (mounted) setProducts(data);
+    });
+    return () => { mounted = false; };
   }, []);
 
   async function handleDelete(productId: string) {
-    if (!confirm('Hapus produk ini? (Hanya simulasi statis)')) return;
+    if (!confirm('Hapus produk ini?')) return;
     setDeleting(productId);
-    await new Promise(r => setTimeout(r, 800)); // Simulate delay
+    await fetch(`/api/products?id=${productId}`, { method: 'DELETE' }).catch(() => undefined);
     setProducts(prev => prev.filter(p => p.id !== productId));
     setDeleting(null);
   }

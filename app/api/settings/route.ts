@@ -4,75 +4,78 @@
  * POST — Upsert the singleton app_settings row (admin only).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
+import { getSupabaseServerClient } from '@/lib/supabase-server';
+import { DEFAULT_APP_SETTINGS, SETTINGS_ROW_ID, normalizeSettings } from '@/lib/map-settings';
 
 export async function GET() {
-  const sb = getSupabase();
-  if (!sb) {
-    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
-  }
-  const { data, error } = await sb
-    .from('app_settings')
-    .select('*')
-    .limit(1)
-    .single();
+  const sb = getSupabaseServerClient();
+  if (!sb) return NextResponse.json(DEFAULT_APP_SETTINGS);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  try {
+    const { data: primary, error: primaryError } = await sb
+      .from('app_settings')
+      .select('*')
+      .eq('id', SETTINGS_ROW_ID)
+      .maybeSingle();
+
+    if (primaryError) {
+      console.warn('[API] Failed to fetch primary settings:', primaryError);
+      return NextResponse.json(DEFAULT_APP_SETTINGS);
+    }
+
+    if (primary) return NextResponse.json(normalizeSettings(primary));
+
+    const { data: latest, error: latestError } = await sb
+      .from('app_settings')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestError) {
+      console.warn('[API] Failed to fetch latest settings:', latestError);
+      return NextResponse.json(DEFAULT_APP_SETTINGS);
+    }
+
+    return NextResponse.json(normalizeSettings(latest ?? DEFAULT_APP_SETTINGS));
+  } catch (error) {
+    console.warn('[API] Failed to fetch settings:', error);
+    return NextResponse.json(DEFAULT_APP_SETTINGS);
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const sb = getSupabase();
+  const sb = getSupabaseServerClient();
   if (!sb) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
   }
   const body = await req.json();
+  const settings = normalizeSettings(body);
 
   const payload = {
-    village_name:      body.village_name,
-    district_name:     body.district_name,
-    city_name:         body.city_name,
-    province_name:     body.province_name,
-    center_lat:        body.center_lat,
-    center_lng:        body.center_lng,
-    boundary_geojson:  body.boundary_geojson ?? null,
-    fallback_radius_m: body.fallback_radius_m ?? 2500,
+    id: SETTINGS_ROW_ID,
+    village_name: settings.village_name,
+    district_name: settings.district_name,
+    city_name: settings.city_name,
+    province_name: settings.province_name,
+    center_lat: settings.center_lat,
+    center_lng: settings.center_lng,
+    boundary_geojson: settings.boundary_geojson,
+    fallback_radius_m: settings.fallback_radius_m,
     updated_at:        new Date().toISOString(),
   };
 
-  // 1. Check if a settings row already exists
-  const { data: existing } = await sb
-    .from('app_settings')
-    .select('id')
-    .limit(1)
-    .single();
-
-  let data, error;
-
-  if (existing?.id) {
-    // 2a. UPDATE existing row
-    ({ data, error } = await sb
+  try {
+    const { data, error } = await sb
       .from('app_settings')
-      .update(payload)
-      .eq('id', existing.id)
+      .upsert(payload, { onConflict: 'id' })
       .select()
-      .single());
-  } else {
-    // 2b. INSERT new row (first-time setup)
-    ({ data, error } = await sb
-      .from('app_settings')
-      .insert(payload)
-      .select()
-      .single());
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(normalizeSettings(data));
+  } catch (error) {
+    console.warn('[API] Failed to save settings:', error);
+    return NextResponse.json({ error: 'Gagal menyimpan pengaturan.' }, { status: 500 });
   }
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
 }

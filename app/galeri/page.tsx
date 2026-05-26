@@ -1,10 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Camera, Image as ImageIcon, X, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { dummyGallery, GalleryItem } from '@/lib/dummy-data';
 import Image from 'next/image';
+import { fetchJson } from '@/lib/api-client';
 
 export default function GaleriPage() {
   const t = useTranslations('public_pages');
@@ -13,8 +14,17 @@ export default function GaleriPage() {
   
   const [filter, setFilter] = useState(t('btn_all'));
   const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
+  const [gallery, setGallery] = useState<GalleryItem[]>(dummyGallery);
 
-  const filtered = dummyGallery.filter(g => filter === t('btn_all') || g.category === filter);
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/gallery', dummyGallery).then((data) => {
+      if (mounted) setGallery(data);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const filtered = gallery.filter(g => filter === t('btn_all') || g.category === filter);
 
   return (
     <div className="min-h-screen bg-bg pt-24 pb-20 px-4">

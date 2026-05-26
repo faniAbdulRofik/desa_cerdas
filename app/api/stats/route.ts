@@ -1,35 +1,24 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { countRows } from '@/lib/api-helpers';
+import { dummyStats } from '@/lib/dummy-data';
 
 export async function GET() {
   try {
-    if (!supabase) {
-      return NextResponse.json({ reports: 0, products: 0, resolved: 0 });
-    }
-
-    // 1. Total Reports
-    const { count: reportsCount } = await supabase
-      .from('reports')
-      .select('*', { count: 'exact', head: true });
-
-    // 2. Total Products
-    const { count: productsCount } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true });
-
-    // 3. Resolved Issues (Reports 'completed')
-    const { count: resolvedCount } = await supabase
-      .from('reports')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'completed');
+    const reportsCount = await countRows('reports');
+    const productsCount = await countRows('products');
+    const resolvedCount = await countRows('reports', { status: 'completed' });
 
     return NextResponse.json({
-      reports: reportsCount || 0,
-      products: productsCount || 0,
-      resolved: resolvedCount || 0
+      reports: reportsCount ?? dummyStats.totalReports,
+      products: productsCount ?? dummyStats.activeUMKM,
+      resolved: resolvedCount ?? dummyStats.completedReports
     });
   } catch (error) {
     console.error('[API_STATS_GET]', error);
-    return NextResponse.json({ reports: 0, products: 0, resolved: 0 }, { status: 500 });
+    return NextResponse.json({
+      reports: dummyStats.totalReports,
+      products: dummyStats.activeUMKM,
+      resolved: dummyStats.completedReports,
+    }, { status: 500 });
   }
 }

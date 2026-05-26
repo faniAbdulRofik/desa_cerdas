@@ -5,8 +5,11 @@
  * MapView is loaded client-side only to prevent Leaflet SSR crash.
  */
 import dynamic from 'next/dynamic';
-import { Loader2, MapPin, Satellite, Layers } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Loader2, MapPin, Layers } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { fetchSettings } from '@/lib/geofence';
+import { DEFAULT_APP_SETTINGS } from '@/lib/map-settings';
 
 const MapView = dynamic(() => import('@/components/map/MapView'), {
   ssr: false,
@@ -17,7 +20,7 @@ const MapView = dynamic(() => import('@/components/map/MapView'), {
       </div>
       <div className="text-center">
         <p className="font-bold text-gray-700">Memuat Peta Interaktif...</p>
-        <p className="text-sm text-gray-400">Desa Labuhan Maringgai, Lampung Timur</p>
+        <p className="text-sm text-gray-400">{DEFAULT_APP_SETTINGS.village_name}, {DEFAULT_APP_SETTINGS.city_name}</p>
       </div>
     </div>
   ),
@@ -25,6 +28,18 @@ const MapView = dynamic(() => import('@/components/map/MapView'), {
 
 export default function PetaPage() {
   const t = useTranslations('map');
+  const [subtitle, setSubtitle] = useState(
+    `${DEFAULT_APP_SETTINGS.village_name}, ${DEFAULT_APP_SETTINGS.city_name}`
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    fetchSettings({ refresh: true }).then((settings) => {
+      if (!mounted) return;
+      setSubtitle(`${settings.village_name}, ${settings.city_name}`);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   // We assign MapView within component or outside? 
   // Next-intl works fine inside React components. We can just keep MapView as is.
@@ -37,7 +52,7 @@ export default function PetaPage() {
             <MapPin className="w-5 h-5 text-primary-800" />
             <div>
               <h1 className="text-primary-950 text-xs">{t('title')}</h1>
-              <p className="text-gray-400">{t('subtitle')}</p>
+              <p className="text-gray-400">{subtitle || t('subtitle')}</p>
             </div>
           </div>
 

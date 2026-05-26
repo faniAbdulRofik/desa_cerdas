@@ -4,18 +4,15 @@
  * Persists to Supabase and falls back to mock response.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { dummyAlerts } from '@/lib/dummy-data';
+import { insertRow, jsonError, listRows } from '@/lib/api-helpers';
 
 export async function GET() {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('emergency_alerts')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) return NextResponse.json(data);
-  }
-  return NextResponse.json(dummyAlerts);
+  const alerts = await listRows('emergency_alerts', dummyAlerts, {
+    order: { column: 'created_at', ascending: false },
+  });
+
+  return NextResponse.json(alerts);
 }
 
 export async function POST(request: NextRequest) {
@@ -23,25 +20,23 @@ export async function POST(request: NextRequest) {
   const { type, description, location, lat, lng, user_id } = body;
 
   if (!type || !description) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    return jsonError('Missing required fields', 400);
   }
 
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('emergency_alerts')
-      .insert({ type, description, location, lat, lng, user_id, status: 'active' })
-      .select()
-      .single();
-    if (!error && data) return NextResponse.json(data, { status: 201 });
-  }
-
-  // Mock success response
-  return NextResponse.json({
+  const fallback = {
     id: `sos-${Date.now()}`,
     type,
     description,
     location,
+    lat: lat ?? null,
+    lng: lng ?? null,
+    user_id: user_id ?? 'anonymous',
     status: 'active',
     created_at: new Date().toISOString(),
-  }, { status: 201 });
+  };
+
+  const { data, error } = await insertRow('emergency_alerts', fallback, fallback);
+  if (error) return jsonError(error.message);
+
+  return NextResponse.json(data, { status: 201 });
 }

@@ -4,6 +4,7 @@ import { BookOpen, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Eye, E
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
 import { dummyArticles } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Article = {
@@ -25,7 +26,9 @@ export default function AdminKomunitasPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    // no-op for static demo
+    setLoading(true);
+    setArticles(await fetchJson('/api/articles', dummyArticles as any[]));
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
@@ -33,22 +36,32 @@ export default function AdminKomunitasPage() {
   async function save() {
     if (!form.title) return;
     setSaving(true); setError('');
-    setTimeout(() => {
-      if (editId) {
-        setArticles(prev => prev.map(a => a.id === editId ? { ...a, ...form } as any : a));
-      } else {
-        setArticles(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...form } as any, ...prev]);
-      }
-      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
-    }, 500);
+    const res = await fetch('/api/articles', {
+      method: editId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editId ? { id: editId, ...form } : form),
+    });
+    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...form };
+    if (editId) {
+      setArticles(prev => prev.map(a => a.id === editId ? { ...a, ...saved } as any : a));
+    } else {
+      setArticles(prev => [saved as any, ...prev]);
+    }
+    setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
   }
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
+    await fetch(`/api/articles?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
     setArticles(prev => prev.filter(a => a.id !== id));
   }
 
   async function togglePublish(id: string, current: boolean) {
+    await fetch('/api/articles', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_published: !current }),
+    }).catch(() => undefined);
     setArticles(prev => prev.map(a => a.id === id ? { ...a, is_published: !current } : a));
   }
 

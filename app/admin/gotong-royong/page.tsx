@@ -4,6 +4,7 @@ import { Users, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil } from 'lu
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
 import { dummyActions } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Action = {
@@ -28,7 +29,9 @@ export default function AdminGotongRoyongPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    // no-op for static demo
+    setLoading(true);
+    setActions(await fetchJson('/api/actions', dummyActions as any[]));
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
@@ -36,23 +39,33 @@ export default function AdminGotongRoyongPage() {
   async function save() {
     if (!form.title) return;
     setSaving(true); setError('');
-    setTimeout(() => {
-      const payload = { ...form, max_participants: Number(form.max_participants), current_participants: Number(form.current_participants) };
-      if (editId) {
-        setActions(prev => prev.map(a => a.id === editId ? { ...a, ...payload } as any : a));
-      } else {
-        setActions(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...payload } as any, ...prev]);
-      }
-      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
-    }, 500);
+    const payload = { ...form, max_participants: Number(form.max_participants), current_participants: Number(form.current_participants) };
+    const res = await fetch('/api/actions', {
+      method: editId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editId ? { id: editId, ...payload } : payload),
+    });
+    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...payload };
+    if (editId) {
+      setActions(prev => prev.map(a => a.id === editId ? { ...a, ...saved } as any : a));
+    } else {
+      setActions(prev => [saved as any, ...prev]);
+    }
+    setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
   }
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
+    await fetch(`/api/actions?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
     setActions(prev => prev.filter(a => a.id !== id));
   }
 
   async function changeStatus(id: string, status: string) {
+    await fetch('/api/actions', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    }).catch(() => undefined);
     setActions(prev => prev.map(a => a.id === id ? { ...a, status } : a));
   }
 

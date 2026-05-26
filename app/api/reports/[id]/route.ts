@@ -3,20 +3,18 @@
  * GET: Single report details. PATCH: Update report status (admin).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { dummyReports } from '@/lib/dummy-data';
+import { getRowById, jsonError, updateRow } from '@/lib/api-helpers';
+import { getSupabaseServerClient } from '@/lib/supabase-server';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  if (supabase) {
-    const { data, error } = await supabase.from('reports').select('*').eq('id', id).single();
-    if (!error && data) return NextResponse.json(data);
-  }
-
   const report = dummyReports.find((r) => r.id === id);
-  if (!report) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(report);
+  const data = await getRowById('reports', id, report ?? null);
+
+  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json(data);
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -29,16 +27,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
 
+  const fallback = { id, status, updated_at: new Date().toISOString() };
+  const { data, error } = await updateRow('reports', id, { status }, fallback);
+
+  if (error) return jsonError(error.message);
+
+  const supabase = getSupabaseServerClient();
   if (supabase) {
-    const { data, error } = await supabase
-      .from('reports')
-      .update({ status })
-      .eq('id', id)
-      .select()
-      .single();
-    if (!error && data) return NextResponse.json(data);
+    await supabase.from('report_status_history').insert({
+      report_id: id,
+      status,
+      note: body.note ?? `Status laporan diubah menjadi ${status}.`,
+      changed_by: body.changed_by ?? 'Admin Desa',
+    });
   }
 
-  // Fallback: return success mock
-  return NextResponse.json({ id, status, updated_at: new Date().toISOString() });
+  return NextResponse.json(data);
 }

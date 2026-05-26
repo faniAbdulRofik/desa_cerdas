@@ -20,10 +20,18 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { dummyReports } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
+import { fetchSettings } from '@/lib/geofence';
+import {
+  boundaryToLeafletPositions,
+  DEFAULT_APP_SETTINGS,
+  MAP_TILE_LAYERS,
+  type MapLayerKey,
+} from '@/lib/map-settings';
 
 
 // ─── Constants (defaults, overridden by DB) ───────────────────
-const DEFAULT_CENTER: [number, number] = [-5.3428912, 105.7938069];
+const DEFAULT_CENTER: [number, number] = [DEFAULT_APP_SETTINGS.center_lat, DEFAULT_APP_SETTINGS.center_lng];
 const DEFAULT_ZOOM = 14;
 
 // ─── Fix Leaflet icon path in Next.js ─────────────────────────
@@ -92,6 +100,39 @@ function createMarkerIcon(status: string, category: string) {
 }
 
 // ─── Dynamic Village boundary polygon ─────────────────────────
+function createVillageCenterIcon() {
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="position:relative;width:44px;height:48px;">
+        <div style="
+          position:absolute;left:14px;bottom:4px;width:16px;height:16px;
+          background:#f59e0b;transform:rotate(45deg);border-radius:4px;
+          box-shadow:0 4px 12px rgba(15,23,42,.28);
+        "></div>
+        <div style="
+          position:absolute;left:2px;top:0;width:40px;height:40px;border-radius:9999px;
+          background:#1e3a5f;border:3px solid white;
+          box-shadow:0 4px 14px rgba(30,58,95,.42);
+          display:flex;align-items:center;justify-content:center;
+        ">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 21h18"></path>
+            <path d="M5 21V10"></path>
+            <path d="M19 21V10"></path>
+            <path d="M9 21V10"></path>
+            <path d="M15 21V10"></path>
+            <path d="M12 3 3 8h18z"></path>
+          </svg>
+        </div>
+      </div>
+    `,
+    iconSize: [44, 48],
+    iconAnchor: [22, 44],
+    popupAnchor: [0, -42],
+  });
+}
+
 function VillageBoundary({ coords }: { coords: [number, number][] | null }) {
   if (!coords || coords.length < 3) return null;
   return (
@@ -109,67 +150,39 @@ function VillageBoundary({ coords }: { coords: [number, number][] | null }) {
 }
 
 // ─── Fly to center ───────────────────────────────────────────
-function FlyToCenter({ center }: { center: [number, number] }) {
+function SyncMapView({
+  center,
+  boundary,
+}: {
+  center: [number, number];
+  boundary: [number, number][] | null;
+}) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(center, DEFAULT_ZOOM, { duration: 1.5 });
-  }, [map, center]);
+    if (boundary && boundary.length >= 3) {
+      const bounds = L.latLngBounds(boundary);
+      if (bounds.pad(0.35).contains(L.latLng(center))) {
+        map.fitBounds(bounds, {
+          animate: true,
+          duration: 0.8,
+          padding: [36, 36],
+          maxZoom: 16,
+        });
+        return;
+      }
+    }
+
+    map.flyTo(center, DEFAULT_ZOOM, { duration: 0.8 });
+  }, [map, center, boundary]);
   return null;
 }
 
 // ─── Tile layer definitions ───────────────────────────────────
-const TILE_LAYERS = {
-  street: {
-    label: '🗺️ Jalan',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  },
-  satellite: {
-    label: '🛰️ Satelit',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '© Esri, Maxar, Earthstar Geographics',
-  },
-  terrain: {
-    label: '⛰️ Terrain',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>',
-  },
-} as const;
-type LayerKey = keyof typeof TILE_LAYERS;
-
-// ─── Layer Switcher Button (rendered inside map) ──────────────
-function LayerSwitcher({ active, onChange }: { active: LayerKey; onChange: (k: LayerKey) => void }) {
-  return (
-    <div style={{
-      position: 'absolute', top: 80, right: 10, zIndex: 1000,
-      display: 'flex', flexDirection: 'column', gap: 4,
-    }}>
-      {(Object.keys(TILE_LAYERS) as LayerKey[]).map(k => (
-        <button
-          key={k}
-          onClick={() => onChange(k)}
-          style={{
-            padding: '5px 10px',
-            background: active === k ? '#1e3a5f' : 'white',
-            color: active === k ? 'white' : '#374151',
-            border: '1px solid #e5e7eb',
-            borderRadius: 8,
-            fontSize: 11,
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-            transition: 'all .2s',
-          }}
-        >
-          {TILE_LAYERS[k].label}
-        </button>
-      ))}
-    </div>
-  );
-}
+const TILE_LAYERS = MAP_TILE_LAYERS;
+type LayerKey = MapLayerKey;
 
 // ─── Types ────────────────────────────────────────────────────
-type Report = {
+type MapReport = {
   id: string; title: string; description: string | null;
   category: string; status: string; lat: number | null; lng: number | null;
   author_name: string; created_at: string;
@@ -178,15 +191,43 @@ type Report = {
 // ─── Main Component ───────────────────────────────────────────
 export default function MapView() {
   // Always use dummy reports — no Supabase/API fetch needed
-  const [reports, setReports] = useState(
+  const [reports, setReports] = useState<MapReport[]>(
     dummyReports.map(r => ({ ...r, lat: r.lat!, lng: r.lng! }))
   );
   const [layer, setLayer] = useState<LayerKey>('street');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [mapCenter] = useState<[number, number]>(DEFAULT_CENTER);
-  const [boundaryCoords] = useState<[number, number][] | null>(null);
-  const [villageName] = useState('Desa Labuhan Maringgai');
-  const [villageInfo] = useState({ district: 'Labuhan Maringgai', city: 'Lampung Timur', province: 'Lampung' });
+  const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
+  const [boundaryCoords, setBoundaryCoords] = useState<[number, number][] | null>(null);
+  const [villageName, setVillageName] = useState(DEFAULT_APP_SETTINGS.village_name);
+  const [villageInfo, setVillageInfo] = useState({
+    district: DEFAULT_APP_SETTINGS.district_name,
+    city: DEFAULT_APP_SETTINGS.city_name,
+    province: DEFAULT_APP_SETTINGS.province_name,
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson<MapReport[]>('/api/reports', dummyReports).then((data) => {
+      if (!mounted) return;
+      setReports(
+        data
+          .filter((report) => report.lat != null && report.lng != null)
+          .map((report) => ({ ...report, lat: Number(report.lat), lng: Number(report.lng) }))
+      );
+    });
+    fetchSettings({ refresh: true }).then((settings) => {
+      if (!mounted) return;
+      setMapCenter([settings.center_lat, settings.center_lng]);
+      setVillageName(settings.village_name);
+      setVillageInfo({
+        district: settings.district_name,
+        city: settings.city_name,
+        province: settings.province_name,
+      });
+      setBoundaryCoords(boundaryToLeafletPositions(settings.boundary_geojson));
+    });
+    return () => { mounted = false; };
+  }, []);
 
 
 
@@ -260,15 +301,15 @@ export default function MapView() {
           key={layer}
           url={tl.url}
           attribution={tl.attribution}
-          maxZoom={20}
+          maxZoom={tl.maxZoom}
         />
 
         {/* Custom controls */}
         <ZoomControl position="topright" />
         <ScaleControl position="bottomleft" imperial={false} />
 
-        {/* Fly to dynamic center on first render */}
-        <FlyToCenter center={mapCenter} />
+        {/* Follow the admin-configured center and boundary. */}
+        <SyncMapView center={mapCenter} boundary={boundaryCoords} />
 
         {/* Village boundary polygon (from admin settings) */}
         <VillageBoundary coords={boundaryCoords} />
@@ -279,22 +320,7 @@ export default function MapView() {
         {/* Village center marker */}
         <Marker
           position={mapCenter}
-          icon={L.divIcon({
-            className: '',
-            html: `
-              <div style="
-                width:36px;height:36px;border-radius:50%/50%;
-                background:linear-gradient(135deg,#1e3a5f,#3b82f6);
-                border:3px solid white;
-                box-shadow:0 2px 12px rgba(30,58,95,.5);
-                display:flex;align-items:center;justify-content:center;
-                font-size:16px;
-              ">🏛️</div>
-            `,
-            iconSize: [36, 36],
-            iconAnchor: [18, 18],
-            popupAnchor: [0, -22],
-          })}
+          icon={createVillageCenterIcon()}
         >
           <Popup>
             <div style={{ minWidth: 200, padding: 4 }}>

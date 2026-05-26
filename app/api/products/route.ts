@@ -3,22 +3,26 @@
  * GET: List all UMKM products. POST: Create. PUT: Update. DELETE: Remove.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { dummyProducts } from '@/lib/dummy-data';
+import { deleteRow, getRowById, insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const store_id = searchParams.get('store_id');
+  const id = searchParams.get('id');
 
-  if (supabase) {
-    let query = supabase.from('products').select('*').order('created_at', { ascending: false });
-    if (store_id) {
-      query = query.eq('store_id', store_id);
-    }
-    const { data, error } = await query;
-    if (!error && data) return NextResponse.json(data);
+  if (id) {
+    const fallback = dummyProducts.find((product) => product.id === id) ?? null;
+    const product = await getRowById('products', id, fallback);
+    if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(product);
   }
-  return NextResponse.json(dummyProducts);
+
+  const products = await listRows('products', dummyProducts, {
+    filters: { store_id },
+    order: { column: 'created_at', ascending: false },
+  });
+  return NextResponse.json(id ? products.find((product: any) => product.id === id) ?? null : products);
 }
 
 export async function POST(request: NextRequest) {
@@ -29,37 +33,39 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('products')
-      .insert({ name, description, price, phone_number, image_url, user_id, category, seller_name, store_id, stock })
-      .select()
-      .single();
-    if (error) {
-      console.error('[API] Error inserting product:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    if (data) return NextResponse.json(data, { status: 201 });
-  }
+  const fallback = {
+    id: `product-${Date.now()}`,
+    user_id: user_id ?? 'anonymous',
+    store_id: store_id ?? null,
+    seller_name: seller_name ?? 'UMKM Desa',
+    name,
+    description: description ?? '',
+    price: Number(price),
+    phone_number: phone_number ?? '',
+    whatsapp: body.whatsapp ?? phone_number ?? '',
+    image_url: image_url ?? '',
+    category: category ?? 'Makanan',
+    stock: Number(stock ?? 0),
+    featured: Boolean(body.featured ?? false),
+    sales_count: Number(body.sales_count ?? 0),
+    rating: Number(body.rating ?? 0),
+    created_at: new Date().toISOString(),
+  };
 
-  return NextResponse.json({ id: `product-${Date.now()}`, name, price }, { status: 201 });
+  const { data, error } = await insertRow('products', fallback, fallback);
+  if (error) return jsonError(error.message);
+
+  return NextResponse.json(data, { status: 201 });
 }
 
 export async function PUT(request: NextRequest) {
   const body = await request.json();
   const { id, ...updates } = body;
 
-  if (!id) return NextResponse.json({ error: 'Missing product id' }, { status: 400 });
-  if (!supabase) return NextResponse.json({ id, ...updates });
+  if (!id) return jsonError('Missing product id', 400);
 
-  const { data, error } = await supabase
-    .from('products')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { data, error } = await updateRow('products', id, updates, { id, ...updates });
+  if (error) return jsonError(error.message);
   return NextResponse.json(data);
 }
 
@@ -67,11 +73,10 @@ export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
-  if (!id) return NextResponse.json({ error: 'Missing product id' }, { status: 400 });
-  if (!supabase) return NextResponse.json({ deleted: true });
+  if (!id) return jsonError('Missing product id', 400);
 
-  const { error } = await supabase.from('products').delete().eq('id', id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { error } = await deleteRow('products', id);
+  if (error) return jsonError(error.message);
   return NextResponse.json({ deleted: true });
 }
 

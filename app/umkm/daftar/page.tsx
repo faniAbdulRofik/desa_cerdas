@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState } from 'react';
 import { Store, Loader2, CheckCircle, ShoppingBag, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -11,8 +11,18 @@ export default function DaftarUMKMPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800)); // Simulasi mendaftar
-    setSuccess(true);
+    const res = await fetch('/api/stores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: 'user-warga',
+        name: formData.name,
+        description: `${formData.description}\n\nAlamat: ${formData.address}`,
+        status: 'active',
+      }),
+    });
+    if (res.ok) setSuccess(true);
+    else alert('Gagal mendaftarkan toko.');
     setLoading(false);
   }
 
@@ -30,7 +40,7 @@ export default function DaftarUMKMPage() {
               Toko <strong className="text-primary-800">{formData.name || 'UMKM Anda'}</strong> telah didaftarkan.
             </p>
             <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-              Ini adalah versi simulasi statis. Toko Anda langsung dianggap aktif untuk keperluan demonstrasi.
+              Toko Anda langsung aktif dan dapat digunakan untuk mengelola produk.
             </p>
             <Link
               href="/umkm/toko"
@@ -60,7 +70,7 @@ export default function DaftarUMKMPage() {
           </div>
           <h1 className="text-3xl font-bold text-primary-950 tracking-tight mb-2">Buka Toko Anda</h1>
           <p className="text-sm text-gray-500 max-w-sm mx-auto">
-            Daftarkan UMKM Anda di marketplace desa secara gratis. Simulasi Pendaftaran UMKM (Semi-Dynamic).
+            Daftarkan UMKM Anda di marketplace desa secara gratis.
           </p>
         </div>
 
@@ -110,10 +120,10 @@ export default function DaftarUMKMPage() {
 
             {/* Info box */}
             <div className="p-4 bg-amber-50 border border-amber-200">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">Catatan Simulasi</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">Catatan</p>
               <ul className="text-xs text-amber-600 space-y-1 leading-relaxed">
-                <li>• Data ini tidak akan disimpan ke database sungguhan.</li>
-                <li>• Setelah mendaftar, Anda dapat mengunjungi Dashboard Toko.</li>
+                <li>Data toko akan disimpan melalui backend marketplace.</li>
+                <li>â€¢ Setelah mendaftar, Anda dapat mengunjungi Dashboard Toko.</li>
               </ul>
             </div>
 
@@ -127,7 +137,7 @@ export default function DaftarUMKMPage() {
               ) : (
                 <>
                   <Store className="w-4 h-4" />
-                  Daftarkan Toko (Simulasi)
+                  Daftarkan Toko
                 </>
               )}
             </button>
@@ -137,3 +147,4 @@ export default function DaftarUMKMPage() {
     </div>
   );
 }
+

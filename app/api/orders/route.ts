@@ -4,26 +4,21 @@
  * PATCH: Update order status / AWB number.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { dummyOrders } from '@/lib/dummy-data';
+import { jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const buyer_id = searchParams.get('buyer_id');
   const store_id = searchParams.get('store_id');
 
-  if (!supabase) return NextResponse.json([]);
+  const orders = await listRows('orders', dummyOrders, {
+    filters: { buyer_id, store_id },
+    order: { column: 'created_at', ascending: false },
+    select: '*, order_items(*, products(*))',
+  });
 
-  let query = supabase
-    .from('orders')
-    .select('*, order_items(*, products(*))')
-    .order('created_at', { ascending: false });
-  
-  if (buyer_id) query = query.eq('buyer_id', buyer_id);
-  if (store_id) query = query.eq('store_id', store_id);
-
-  const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || []);
+  return NextResponse.json(orders);
 }
 
 export async function PATCH(request: NextRequest) {
@@ -31,11 +26,7 @@ export async function PATCH(request: NextRequest) {
   const { order_id, status, awb_number } = body;
 
   if (!order_id) {
-    return NextResponse.json({ error: 'order_id is required' }, { status: 400 });
-  }
-
-  if (!supabase) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    return jsonError('order_id is required', 400);
   }
 
   const updateData: any = { updated_at: new Date().toISOString() };
@@ -47,13 +38,11 @@ export async function PATCH(request: NextRequest) {
   if (body.completion_photo_base64 !== undefined) updateData.completion_photo_base64 = body.completion_photo_base64;
   if (body.is_reviewed !== undefined) updateData.is_reviewed = body.is_reviewed;
 
-  const { data, error } = await supabase
-    .from('orders')
-    .update(updateData)
-    .eq('id', order_id)
-    .select()
-    .single();
+  const { data, error } = await updateRow('orders', order_id, updateData, {
+    id: order_id,
+    ...updateData,
+  });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return jsonError(error.message);
   return NextResponse.json(data);
 }

@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Megaphone, Bell, Calendar, ShieldAlert, Heart, Info, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { dummyAnnouncements } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 function getCategoryIcon(category: string) {
   switch (category) {
@@ -19,8 +20,17 @@ export default function PengumumanPage() {
   const tAuth = useTranslations('auth');
   const CATEGORIES = [t('btn_all'), 'Pemerintahan', 'Kesehatan', 'Sosial', 'Umum'];
   const [filter, setFilter] = useState(t('btn_all'));
+  const [announcements, setAnnouncements] = useState(dummyAnnouncements);
 
-  const filtered = dummyAnnouncements.filter(a => filter === t('btn_all') || a.category === filter);
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/announcements', dummyAnnouncements).then((data) => {
+      if (mounted) setAnnouncements(data);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const filtered = announcements.filter(a => filter === t('btn_all') || a.category === filter);
 
   return (
     <div className="min-h-screen bg-bg pt-24 pb-20 px-4">

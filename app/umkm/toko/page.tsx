@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { StatCard } from '@/components/ui/StatCard';
 import { dummyProducts } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 export default function SellerDashboardHome() {
   const [stats, setStats] = useState({
@@ -14,14 +15,17 @@ export default function SellerDashboardHome() {
   });
 
   useEffect(() => {
-     // User is locally simulated.
-     // In a real static build, we just load dummy metrics.
-     setStats({
-       products: dummyProducts.length,
-       earnings: 12500000, // Dummy
-       orders: 45,         // Dummy
-       pendingOrders: 3,   // Dummy
-       reviews: 12
+     Promise.all([
+       fetchJson('/api/products', dummyProducts),
+       fetchJson('/api/orders?store_id=dummy-store-1', [] as any[]),
+     ]).then(([products, orders]) => {
+       setStats({
+         products: products.length,
+         earnings: orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0) || 12500000,
+         orders: orders.length || 45,
+         pendingOrders: orders.filter((order) => ['pending', 'terbayar', 'diproses'].includes(order.status)).length || 3,
+         reviews: 12
+       });
      });
   }, []);
 

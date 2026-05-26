@@ -26,7 +26,7 @@ export default function NewReportPage() {
     setLocating(true);
 
     // Fetch dynamic boundary from admin-configured settings
-    const settings = await fetchSettings();
+    const settings = await fetchSettings({ refresh: true });
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -103,7 +103,9 @@ export default function NewReportPage() {
       if (imageFile) {
         const { createClient } = await import('@supabase/supabase-js');
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        const supabaseKey =
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+          process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
         
         if (supabaseUrl && supabaseKey) {
           const sb = createClient(supabaseUrl, supabaseKey);

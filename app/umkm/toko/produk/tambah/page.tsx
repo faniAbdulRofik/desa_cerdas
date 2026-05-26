@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, ArrowLeft, X, UploadCloud, Sparkles } from 'lucide-react';
 import { IKContext, IKUpload } from 'imagekitio-react';
 import Link from 'next/link';
+import { fetchJson } from '@/lib/api-client';
 
 const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/9vtqch760";
 const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "public_0mvXhk/vVsGASxItm3hSlvr5KoA=";
@@ -33,13 +34,18 @@ function ProductForm() {
   });
 
   useEffect(() => {
-    // In a real app we would load the product here.
-    // For semi-dynamic mode, we'll just mock it if editId is provided.
     if (editId) {
-       setFormData({
-          name: 'Produk Dummy (Edit)', description: 'Deskripsi dummy', price: '15000',
-          category: 'Makanan', image_url: 'https://picsum.photos/seed/dummy/400/300',
-          phone_number: '6281234567890', stock: '20'
+       fetchJson(`/api/products/${editId}`, null as any).then((product) => {
+         if (!product) return;
+         setFormData({
+           name: product.name ?? '',
+           description: product.description ?? '',
+           price: String(product.price ?? ''),
+           category: product.category ?? 'Makanan',
+           image_url: product.image_url ?? '',
+           phone_number: product.phone_number ?? '',
+           stock: String(product.stock ?? '10'),
+         });
        });
     }
   }, [editId]);
@@ -47,8 +53,21 @@ function ProductForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await new Promise(r => setTimeout(r, 800)); // Simulate save
-    router.push('/umkm/toko/produk');
+    const payload = {
+      ...formData,
+      price: Number(formData.price),
+      stock: Number(formData.stock),
+      seller_name: 'Toko Desa',
+      user_id: 'user-warga',
+    };
+    const response = await fetch('/api/products', {
+      method: editId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editId ? { id: editId, ...payload } : payload),
+    });
+    setSaving(false);
+    if (response.ok) router.push('/umkm/toko/produk');
+    else alert('Gagal menyimpan produk.');
   }
 
   return (

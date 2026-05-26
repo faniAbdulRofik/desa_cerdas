@@ -6,9 +6,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { GraduationCap, Star, Users, Clock, ChevronLeft, CheckCircle, PlayCircle, Lock } from 'lucide-react';
-import { dummyModules } from '@/lib/dummy-data';
+import { dummyModules, type TrainingModule } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 const LEVEL_STYLES: Record<string, string> = {
   Pemula: 'bg-green-100 text-green-700',
@@ -18,10 +19,23 @@ const LEVEL_STYLES: Record<string, string> = {
 
 export default function EdukasiDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const mod = dummyModules.find((m) => m.id === id);
-  if (!mod) notFound();
+  const [mod, setMod] = useState<TrainingModule | null>(dummyModules.find((m) => m.id === id) ?? null);
+  const [loading, setLoading] = useState(true);
 
   const [enrolled, setEnrolled] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    fetchJson<TrainingModule | null>(`/api/training-modules/${id}`, dummyModules.find((m) => m.id === id) ?? null).then((data) => {
+      if (!mounted) return;
+      setMod(data);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [id]);
+
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-sm text-gray-500">Memuat modul...</div>;
+  if (!mod) notFound();
+
   const hours = Math.floor(mod.duration_minutes / 60);
   const mins = mod.duration_minutes % 60;
 

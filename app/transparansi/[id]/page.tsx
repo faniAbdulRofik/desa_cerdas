@@ -1,10 +1,11 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Building2, Calendar, FileText } from 'lucide-react';
 import { dummyProjects } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 function formatRupiah(n: number) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -12,7 +13,20 @@ function formatRupiah(n: number) {
 
 export default function TransparansiDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const project = dummyProjects.find((p) => p.id === id);
+  const [project, setProject] = useState<any>(dummyProjects.find((p) => p.id === id) ?? null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson(`/api/projects/${id}`, dummyProjects.find((p) => p.id === id) ?? null).then((data) => {
+      if (!mounted) return;
+      setProject(data);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [id]);
+
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-sm text-gray-500">Memuat proyek...</div>;
   if (!project) notFound();
 
   const budgetPct = project.budget > 0 ? Math.round((project.spent / project.budget) * 100) : 0;

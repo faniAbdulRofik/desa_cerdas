@@ -1,12 +1,13 @@
 'use client';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Store, Star, ShoppingBag } from 'lucide-react';
 import { ProductCard } from '@/components/ui/ProductCard';
 import CartDrawer from '@/components/marketplace/CartDrawer';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { dummyProducts } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 export default function UMKMPage() {
@@ -14,10 +15,18 @@ export default function UMKMPage() {
   const router = useRouter();
   const CATEGORIES = [t('cat_all'), t('cat_food'), t('cat_crafts'), t('cat_agri'), t('cat_fashion'), t('cat_services')];
 
-  const [products] = useState<any[]>(dummyProducts);
+  const [products, setProducts] = useState<any[]>(dummyProducts);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Semua');
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/products', dummyProducts).then((data) => {
+      if (mounted) setProducts(data);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   const featured = products.filter((p) => p.featured);
   const filtered = products.filter((p) => {

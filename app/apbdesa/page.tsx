@@ -1,21 +1,31 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FileBarChart, PieChart, Activity, CheckCircle, Clock, Calendar, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { dummyAPBDesa } from '@/lib/dummy-data';
 import { formatRupiah } from '@/lib/utils';
+import { fetchJson } from '@/lib/api-client';
 
 export default function APBDesaPage() {
   const t = useTranslations('public_pages');
   const tAuth = useTranslations('auth');
   const tTrans = useTranslations('transparansi');
   
-  const { year, total_budget, realized, allocations, programs } = dummyAPBDesa;
+  const [apbdesa, setApbdesa] = useState(dummyAPBDesa);
+  const { year, total_budget, realized, allocations, programs } = apbdesa;
   const progressPercent = Math.round((realized / total_budget) * 100);
 
   const [calcInput, setCalcInput] = useState('');
   const [calcBudget, setCalcBudget] = useState<number | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/apbdesa', dummyAPBDesa).then((data) => {
+      if (mounted) setApbdesa(data);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   function handleCalc(e: React.FormEvent) {
     e.preventDefault();

@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GraduationCap, Star, Users, Clock, ChevronRight, Search, BookOpen, Award } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { dummyModules } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Module = {
@@ -79,9 +80,17 @@ export default function EdukasiPage() {
   const CATEGORIES = [t('cat_all'), t('cat_biz'), t('cat_agri'), t('cat_env'), t('cat_fin'), t('cat_health'), t('cat_art')];
   const DB_CATS = ['Semua', 'Bisnis & Marketing', 'Pertanian', 'Lingkungan', 'Keuangan', 'Kesehatan & Keselamatan', 'Kerajinan & Seni'];
 
-  const [modules] = useState<any[]>(dummyModules);
+  const [modules, setModules] = useState<any[]>(dummyModules);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson('/api/training-modules', dummyModules).then((data) => {
+      if (mounted) setModules(data);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   const filtered = modules.filter(m => {
     const matchSearch = m.title.toLowerCase().includes(search.toLowerCase());

@@ -3,26 +3,46 @@
  * app/gotong-royong/[id]/page.tsx
  * Community action detail page with join button.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { use } from 'react';
 import { Users, MapPin, Calendar, Clock, ChevronLeft, CheckCircle, Loader2, Share2 } from 'lucide-react';
 import { dummyActions } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 export default function GotongRoyongDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const action = dummyActions.find((a) => a.id === id);
-  if (!action) notFound();
+  const [action, setAction] = useState<any>(dummyActions.find((a) => a.id === id) ?? null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const [joined, setJoined] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson(`/api/actions/${id}`, dummyActions.find((a) => a.id === id) ?? null).then((data) => {
+      if (!mounted) return;
+      setAction(data);
+      setInitialLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [id]);
+
+  if (initialLoading) return <div className="max-w-2xl mx-auto px-4 py-16 text-center text-sm text-gray-500">Memuat kegiatan...</div>;
+  if (!action) notFound();
+
   const pct = Math.round((action.current_participants / action.max_participants) * 100);
 
   async function handleJoin() {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
+    await fetch(`/api/actions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current_participants: action.current_participants + 1 }),
+    }).catch(() => undefined);
+    setAction((prev: any) => prev ? { ...prev, current_participants: prev.current_participants + 1 } : prev);
     setJoined(true);
     setLoading(false);
   }

@@ -9,6 +9,7 @@ import {
   Save, Loader2, CheckCircle, AlertTriangle,
   Map, Globe, Bell, Shield, Palette,
 } from 'lucide-react';
+import { DEFAULT_APP_SETTINGS, normalizeSettings } from '@/lib/map-settings';
 
 interface PlatformSettings {
   village_name: string;
@@ -25,18 +26,20 @@ export default function AdminSettingsPage() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSettings({
-        village_name: 'Desa Labuhan Maringgai',
-        district_name: 'Labuhan Maringgai',
-        city_name: 'Lampung Timur',
-        province_name: 'Lampung',
-        center_lat: -5.321,
-        center_lng: 105.789
+    let mounted = true;
+    fetch('/api/settings', { cache: 'no-store' })
+      .then((res) => res.ok ? res.json() : DEFAULT_APP_SETTINGS)
+      .then((data) => {
+        if (!mounted) return;
+        setSettings(normalizeSettings(data));
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setSettings(DEFAULT_APP_SETTINGS);
+        setLoading(false);
       });
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    return () => { mounted = false; };
   }, []);
 
   if (loading) {

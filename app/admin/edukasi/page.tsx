@@ -4,6 +4,7 @@ import { GraduationCap, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, E
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
 import { dummyModules } from '@/lib/dummy-data';
+import { fetchJson } from '@/lib/api-client';
 
 
 type Module = {
@@ -26,7 +27,9 @@ export default function AdminEdukasiPage() {
   const [error, setError] = useState('');
 
   async function load() {
-    // no-op for static demo
+    setLoading(true);
+    setModules(await fetchJson('/api/training-modules', dummyModules as any[]));
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
@@ -34,23 +37,33 @@ export default function AdminEdukasiPage() {
   async function save() {
     if (!form.title) return;
     setSaving(true); setError('');
-    setTimeout(() => {
-      const payload = { ...form, duration_minutes: Number(form.duration_minutes), rating: Number(form.rating), enrolled: Number(form.enrolled) };
-      if (editId) {
-        setModules(prev => prev.map(m => m.id === editId ? { ...m, ...payload } as any : m));
-      } else {
-        setModules(prev => [{ id: Math.random().toString(), created_at: new Date().toISOString(), ...payload } as any, ...prev]);
-      }
-      setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
-    }, 500);
+    const payload = { ...form, duration_minutes: Number(form.duration_minutes), rating: Number(form.rating), enrolled: Number(form.enrolled) };
+    const res = await fetch('/api/training-modules', {
+      method: editId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editId ? { id: editId, ...payload } : payload),
+    });
+    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...payload };
+    if (editId) {
+      setModules(prev => prev.map(m => m.id === editId ? { ...m, ...saved } as any : m));
+    } else {
+      setModules(prev => [saved as any, ...prev]);
+    }
+    setSaving(false); setShowForm(false); setEditId(null); setForm(EMPTY);
   }
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
+    await fetch(`/api/training-modules?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
     setModules(prev => prev.filter(m => m.id !== id));
   }
 
   async function togglePublish(id: string, current: boolean) {
+    await fetch('/api/training-modules', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_published: !current }),
+    }).catch(() => undefined);
     setModules(prev => prev.map(m => m.id === id ? { ...m, is_published: !current } : m));
   }
 

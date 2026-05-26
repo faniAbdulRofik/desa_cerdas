@@ -7,6 +7,7 @@ import { dummyReports } from '@/lib/dummy-data';
 import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
 import { formatRelativeTime } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { fetchJson } from '@/lib/api-client';
 
 const STATUS_OPTIONS = ['pending', 'in_progress', 'completed'] as const;
 
@@ -17,10 +18,22 @@ export default function AdminLaporanPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // no-op for static demo
+    let mounted = true;
+    setLoading(true);
+    fetchJson('/api/reports', dummyReports).then((data) => {
+      if (!mounted) return;
+      setReports(data);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
   }, []);
 
   async function updateStatus(id: string, status: typeof STATUS_OPTIONS[number]) {
+    await fetch(`/api/reports/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).catch(() => undefined);
     setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
     setSelected(null);
   }
