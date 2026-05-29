@@ -28,7 +28,18 @@ type GeocodeResult = {
   boundary_geojson: AppSettings['boundary_geojson'];
   boundary_precision?: 'official' | 'estimated_radius';
   center_precision?: 'office' | 'area';
+  source_label?: string;
   score?: number;
+  identity?: Partial<Pick<AppSettings, IdentityKey>>;
+  region?: {
+    code?: string;
+    name: string;
+    level: 'province' | 'regency' | 'district' | 'village';
+    village_name?: string;
+    district_name?: string;
+    city_name?: string;
+    province_name?: string;
+  };
 };
 
 type IdentityKey = 'village_name' | 'district_name' | 'city_name' | 'province_name';
@@ -47,8 +58,21 @@ function hasEnoughIdentity(settings: Pick<AppSettings, IdentityKey>) {
 }
 
 function settingsFromGeocode(source: AppSettings, result: GeocodeResult) {
+  const identity = result.identity ?? {};
+  const region = result.region;
+  const regionIdentity: Partial<Pick<AppSettings, IdentityKey>> = region
+    ? {
+        village_name: region.village_name ?? region.name,
+        district_name: region.district_name ?? region.name,
+        city_name: region.city_name,
+        province_name: region.province_name,
+      }
+    : {};
+
   return normalizeSettings({
     ...source,
+    ...regionIdentity,
+    ...identity,
     center_lat: result.lat,
     center_lng: result.lng,
     boundary_geojson: result.boundary_geojson ?? null,
@@ -62,7 +86,7 @@ function geocodeMessage(result: GeocodeResult) {
 
   return result.boundary_geojson
     ? result.boundary_precision === 'official'
-      ? `${target} Batas wilayah otomatis diperbarui dari data peta.`
+      ? `${target} Batas wilayah otomatis diperbarui dari ${result.source_label ?? 'data GeoJSON resmi'}.`
       : `${target} Batas wilayah resmi belum tersedia, jadi sistem membuat garis otomatis dari radius wilayah.`
     : `${target} Batas resmi belum tersedia, garis lama dibersihkan supaya tidak salah lokasi.`;
 }
