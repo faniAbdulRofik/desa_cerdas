@@ -5,8 +5,14 @@ import {
   normalizeBoundary,
   type GeoBoundary,
 } from '@/lib/map-settings';
+import {
+  applyRegionToIdentity,
+  searchOfficialBoundaries,
+  type OfficialBoundaryCandidate,
+} from '@/lib/boundary-search';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 const EXTERNAL_GEOCODER_TIMEOUT_MS = 7000;
 
@@ -28,12 +34,14 @@ type Candidate = {
   lat: number;
   lng: number;
   display_name: string;
-  source: 'nominatim' | 'photon' | 'kodepos' | 'local';
+  source: 'wilayah_id' | 'local_geojson' | 'nominatim' | 'photon' | 'kodepos' | 'local';
   corpus: string;
   boundary: GeoBoundary | null;
   boundingBox: BoundingBox | null;
   score: number;
   isAdministrative: boolean;
+  sourceLabel?: string;
+  region?: OfficialBoundaryCandidate['region'];
 };
 
 type LocalFallback = {
@@ -820,6 +828,31 @@ function searchLocalFallbacks(identity: Identity): Candidate[] {
   });
 }
 
+function officialBoundaryToCandidate(candidate: OfficialBoundaryCandidate, identity: Identity): Candidate {
+  const appliedIdentity = applyRegionToIdentity(identity, candidate.region);
+  return {
+    lat: candidate.lat,
+    lng: candidate.lng,
+    display_name: candidate.displayName,
+    source: candidate.source,
+    sourceLabel: candidate.sourceLabel,
+    corpus: normalizeText([
+      candidate.displayName,
+      candidate.region?.name,
+      appliedIdentity.village_name,
+      appliedIdentity.district_name,
+      appliedIdentity.city_name,
+      appliedIdentity.province_name,
+      'Indonesia',
+    ].filter(Boolean).join(' ')),
+    boundary: candidate.boundary,
+    boundingBox: null,
+    score: candidate.score,
+    isAdministrative: true,
+    region: candidate.region,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const identity: Identity = {
     village_name: readParam(request, 'village_name'),
@@ -837,6 +870,33 @@ export async function GET(request: NextRequest) {
     const queries = buildQueries(identity);
     const candidates: Candidate[] = [];
     const officeCandidates: Candidate[] = [];
+
+    const officialCandidates = (await searchOfficialBoundaries({ identity }))
+      .map((candidate) => officialBoundaryToCandidate(candidate, identity));
+    candidates.push(...officialCandidates);
+
+    const bestOfficial = officialCandidates
+      .filter((candidate) => matchesMainArea(candidate, identity))
+      .sort((a, b) => b.score - a.score)[0];
+
+    if (bestOfficial && bestOfficial.score >= 90) {
+      const appliedIdentity = applyRegionToIdentity(identity, bestOfficial.region);
+      return NextResponse.json({
+        lat: bestOfficial.lat,
+        lng: bestOfficial.lng,
+        display_name: bestOfficial.display_name,
+        boundary_geojson: bestOfficial.boundary,
+        boundary_center: { lat: bestOfficial.lat, lng: bestOfficial.lng },
+        boundary_precision: 'official',
+        center_precision: 'area',
+        bounding_box: bestOfficial.boundingBox,
+        score: bestOfficial.score,
+        source: bestOfficial.source,
+        source_label: bestOfficial.sourceLabel,
+        region: bestOfficial.region,
+        identity: appliedIdentity,
+      });
+    }
 
     for (const query of queries) {
       candidates.push(...await searchNominatim(query, identity));
@@ -892,6 +952,7 @@ export async function GET(request: NextRequest) {
     const boundaryCenter = getBoundaryCenter(bestBoundary?.boundary ?? null);
     const lat = bestOffice ? bestOffice.lat : center.lat;
     const lng = bestOffice ? bestOffice.lng : center.lng;
+    const appliedIdentity = applyRegionToIdentity(identity, bestBoundary?.region ?? center.region);
 
     return NextResponse.json({
       lat,
@@ -906,6 +967,9 @@ export async function GET(request: NextRequest) {
       bounding_box: center.boundingBox,
       score: Math.max(center.score, bestBoundary?.score ?? 0),
       source: bestOffice?.source ?? center.source,
+      source_label: bestBoundary?.sourceLabel ?? bestOffice?.sourceLabel ?? center.sourceLabel,
+      region: bestBoundary?.region ?? center.region,
+      identity: appliedIdentity,
     });
   } catch (error) {
     console.warn('[API] Geocode failed:', error);
