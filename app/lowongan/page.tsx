@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Briefcase, MapPin, Clock, Phone, Search, ArrowRight, CheckCircle } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
-import { dummyJobs } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -58,13 +57,13 @@ export default function LowonganPage() {
   const locale = useLocale();
   const CATEGORIES = [t('cat_all'), t('cat_industry'), t('cat_gov'), t('cat_digital'), t('cat_agri'), t('cat_edu')];
   
-  const [jobs, setJobs] = useState<Job[]>(dummyJobs as any[]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/jobs', dummyJobs as any[]).then((data) => {
+    fetchJson('/api/jobs', []).then((data) => {
       if (mounted) setJobs(data);
     });
     return () => { mounted = false; };
@@ -83,8 +82,8 @@ export default function LowonganPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-24">
-      <div className="flex flex-col lg:flex-row lg:items-end gap-10 mb-16">
+    <div className="max-w-7xl mx-auto px-6 py-14 lg:py-16">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-6 lg:gap-8 mb-10">
         <h1 className="text-4xl md:text-[42px] font-semibold text-primary-800 tracking-tight shrink-0 mr-8">
           {t('title_1')}<br />{t('title_2')}
         </h1>
@@ -103,7 +102,7 @@ export default function LowonganPage() {
         </div>
       </div>
       
-      <div className="mb-12 border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="mb-8 lg:mb-10 border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex gap-2 overflow-x-auto scrollbar-none w-full md:w-auto">
           {CATEGORIES.map(c => (
             <button key={c} onClick={() => setCategory(c)} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${category === c ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{c}</button>
@@ -120,13 +119,13 @@ export default function LowonganPage() {
           {filtered.map(job => <JobCard key={job.id} job={job as any} t={t} locale={locale} />)}
         </div>
         {filtered.length === 0 && (
-          <div className="text-center py-24">
+          <div className="text-center py-14 lg:py-16">
             <Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-4" />
             <p className="font-bold text-gray-500">{jobs.length === 0 ? t('empty_none') : t('empty_not_found')}</p>
           </div>
         )}
         
-        <div className="mt-20 border-t border-gray-200 pt-16 flex flex-col items-center text-center">
+        <div className="mt-12 lg:mt-14 border-t border-gray-200 pt-10 lg:pt-12 flex flex-col items-center text-center">
           <h3 className="font-bold text-2xl text-primary-950 tracking-tight mb-4">{t('cta_title')}</h3>
           <p className="text-gray-500 text-xs max-w-md leading-relaxed mb-8">{t('cta_desc')}</p>
           <a href="/auth/login" className="bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest px-8 py-3 transition-colors inline-block">

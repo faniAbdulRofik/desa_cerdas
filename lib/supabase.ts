@@ -2,7 +2,7 @@
  * lib/supabase.ts
  * Supabase client singleton for both browser and server-side usage.
  * Gracefully returns null if environment variables are not configured
- * so the app still renders with dummy data.
+ * so database-backed routes can fail clearly when configuration is missing.
  */
 import { createClient } from '@supabase/supabase-js';
 

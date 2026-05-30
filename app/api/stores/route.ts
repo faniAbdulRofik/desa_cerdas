@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { insertRow, jsonError, listRows } from '@/lib/api-helpers';
 
-const dummyStores = [{ id: 'dummy-store-1', user_id: 'user-warga', name: 'Toko Dummy', status: 'active', created_at: new Date().toISOString() }];
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const user_id = searchParams.get('user_id');
   const status = searchParams.get('status');
-  const stores = await listRows('stores', dummyStores, {
+  const stores = await listRows('stores', [], {
     filters: { user_id, status },
     order: { column: 'created_at', ascending: false },
   });

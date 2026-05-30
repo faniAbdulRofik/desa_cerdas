@@ -1,11 +1,10 @@
 'use client';
-import { Package, DollarSign, ShoppingBag, Clock, CheckCircle, TrendingUp } from 'lucide-react';
+import { Package, DollarSign, ShoppingBag, Clock, CheckCircle, Inbox } from 'lucide-react';
 import { formatRupiah } from '@/lib/utils';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { StatCard } from '@/components/ui/StatCard';
-import { dummyProducts } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 export default function SellerDashboardHome() {
@@ -16,23 +15,23 @@ export default function SellerDashboardHome() {
 
   useEffect(() => {
      Promise.all([
-       fetchJson('/api/products', dummyProducts),
-       fetchJson('/api/orders?store_id=dummy-store-1', [] as any[]),
+       fetchJson('/api/products', []),
+       fetchJson('/api/orders', [] as any[]),
      ]).then(([products, orders]) => {
        setStats({
          products: products.length,
-         earnings: orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0) || 12500000,
-         orders: orders.length || 45,
-         pendingOrders: orders.filter((order) => ['pending', 'terbayar', 'diproses'].includes(order.status)).length || 3,
-         reviews: 12
+         earnings: orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0),
+         orders: orders.length,
+         pendingOrders: orders.filter((order) => ['pending', 'terbayar', 'diproses'].includes(order.status)).length,
+         reviews: 0
        });
      });
   }, []);
 
-  const mockData = [
-     { name: 'Jan', orders: 12 }, { name: 'Feb', orders: 19 },
-     { name: 'Mar', orders: 15 }, { name: 'Apr', orders: 25 },
-     { name: 'Mei', orders: 22 }, { name: 'Jun', orders: 30 },
+  const chartData = [
+     { name: 'Jan', orders: 0 }, { name: 'Feb', orders: 0 },
+     { name: 'Mar', orders: 0 }, { name: 'Apr', orders: 0 },
+     { name: 'Mei', orders: 0 }, { name: 'Jun', orders: 0 },
   ];
 
   return (
@@ -45,10 +44,10 @@ export default function SellerDashboardHome() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Package} label="TOTAL PRODUK" value={stats.products} trend="12%" trendUp />
-        <StatCard icon={Clock} label="MENUNGGU" value={stats.pendingOrders} trend="5%" trendUp={false} />
-        <StatCard icon={CheckCircle} label="PESANAN SELESAI" value={stats.orders} trend="18%" trendUp />
-        <StatCard icon={DollarSign} label="TOTAL PENDAPATAN" value={formatRupiah(stats.earnings)} trend="8%" trendUp accent />
+        <StatCard icon={Package} label="TOTAL PRODUK" value={stats.products} />
+        <StatCard icon={Clock} label="MENUNGGU" value={stats.pendingOrders} />
+        <StatCard icon={CheckCircle} label="PESANAN SELESAI" value={stats.orders} />
+        <StatCard icon={DollarSign} label="TOTAL PENDAPATAN" value={formatRupiah(stats.earnings)} accent />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -58,7 +57,7 @@ export default function SellerDashboardHome() {
             </div>
             <div className="p-6 h-[300px]">
                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={mockData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                      <defs>
                         <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.1}/>
@@ -78,7 +77,7 @@ export default function SellerDashboardHome() {
          <div className="bg-white border border-gray-200 xl:col-span-1 flex flex-col">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary-600" />
+                  <Inbox className="w-4 h-4 text-primary-600" />
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">AI Sales Support</h3>
                </div>
                <span className="px-2 py-0.5 bg-green-50 text-green-700 text-[9px] font-bold uppercase tracking-widest border border-green-200">
@@ -88,7 +87,7 @@ export default function SellerDashboardHome() {
             <div className="p-6 flex-1 flex flex-col justify-center">
                <div className="p-5 border-l-2 border-primary-500 bg-primary-50/50 relative">
                   <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                     Produk UMKM lokal Anda memiliki potensi peningkatan konversi minggu ini (<span className="text-primary-600 font-bold">&uarr; 18%</span>). Tambahkan foto yang lebih menarik untuk mengundang pembeli!
+                     Belum ada data pesanan yang cukup untuk dianalisis. Insight penjualan akan muncul setelah toko menerima transaksi.
                   </p>
                   <Link href="/umkm/toko/produk" className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-primary-700 mt-4 hover:text-primary-900 transition-colors">
                      KELOLA PRODUK SEKARANG &gt;

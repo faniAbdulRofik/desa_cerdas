@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { Megaphone, Bell, Calendar, ShieldAlert, Heart, Info, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { dummyAnnouncements } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
+import type { Announcement } from '@/lib/types';
 
 function getCategoryIcon(category: string) {
   switch (category) {
@@ -20,11 +20,11 @@ export default function PengumumanPage() {
   const tAuth = useTranslations('auth');
   const CATEGORIES = [t('btn_all'), 'Pemerintahan', 'Kesehatan', 'Sosial', 'Umum'];
   const [filter, setFilter] = useState(t('btn_all'));
-  const [announcements, setAnnouncements] = useState(dummyAnnouncements);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/announcements', dummyAnnouncements).then((data) => {
+    fetchJson<Announcement[]>('/api/announcements', []).then((data) => {
       if (mounted) setAnnouncements(data);
     });
     return () => { mounted = false; };
@@ -33,7 +33,7 @@ export default function PengumumanPage() {
   const filtered = announcements.filter(a => filter === t('btn_all') || a.category === filter);
 
   return (
-    <div className="min-h-screen bg-bg pt-24 pb-20 px-4">
+    <div className="min-h-screen bg-bg pt-12 lg:pt-14 pb-12 lg:pb-14 px-4">
       <div className="max-w-4xl mx-auto">
         
         {/* Header */}

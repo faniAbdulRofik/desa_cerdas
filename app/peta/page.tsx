@@ -44,10 +44,10 @@ export default function PetaPage() {
   // We assign MapView within component or outside? 
   // Next-intl works fine inside React components. We can just keep MapView as is.
   return (
-    <div className="flex flex-col h-[100dvh] pt-20">
+    <div className="flex flex-col h-[calc(100dvh-5rem)]">
       {/* ── Top bar ─────────────────────────────────────────── */}
-      <div className="bg-bg border-b border-gray-200 px-6 py-4 shrink-0 z-10 font-bold uppercase tracking-widest text-[9px]">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-bg border-b border-gray-200 px-6 py-3 shrink-0 z-10 font-bold uppercase tracking-widest text-[9px]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <MapPin className="w-5 h-5 text-primary-800" />
             <div>
@@ -56,7 +56,7 @@ export default function PetaPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-4 lg:gap-5 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
               <span className="text-gray-500">{t('status_waiting')}</span>

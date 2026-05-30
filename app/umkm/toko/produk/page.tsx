@@ -4,7 +4,6 @@ import Image from 'next/image';
 import { Package, Pencil, Trash2, Loader2, Plus } from 'lucide-react';
 import { formatRupiah } from '@/lib/utils';
 import Link from 'next/link';
-import { dummyProducts } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 export default function ManageProductsPage() {
@@ -13,7 +12,7 @@ export default function ManageProductsPage() {
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/products', dummyProducts).then((data) => {
+    fetchJson('/api/products', []).then((data) => {
       if (mounted) setProducts(data);
     });
     return () => { mounted = false; };

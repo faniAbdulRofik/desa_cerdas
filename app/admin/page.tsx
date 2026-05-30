@@ -13,10 +13,8 @@ import {
   Users,
   Store,
   AlertCircle,
-  Loader2,
 } from 'lucide-react';
-import { StatCardSkeleton, TableSkeleton } from '@/components/ui/Skeletons';
-import { dummyReports, dummyProducts } from '@/lib/dummy-data';
+import { StatCardSkeleton } from '@/components/ui/Skeletons';
 import { fetchJson } from '@/lib/api-client';
 import { StatCard } from '@/components/ui/StatCard';
 import { AIInsightCard } from '@/components/admin/AIInsightCard';
@@ -26,25 +24,27 @@ import { formatRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
+const emptyDashboardStats = {
+  totalReports: 0,
+  pendingReports: 0,
+  inProgressReports: 0,
+  completedReports: 0,
+  activeUMKM: 0,
+  totalCitizens: 0,
+};
+
 export default function AdminDashboardPage() {
   const t = useTranslations('admin_dashboard');
-  const [stats, setStats] = useState({
-    totalReports: dummyReports.length,
-    pendingReports: dummyReports.filter(r => r.status === 'pending').length,
-    inProgressReports: dummyReports.filter(r => r.status === 'in_progress').length,
-    completedReports: dummyReports.filter(r => r.status === 'completed').length,
-    activeUMKM: dummyProducts.length,
-    totalCitizens: 1250, // Demo count
-  });
-  const [recentReports, setRecentReports] = useState<any[]>(dummyReports.slice(0, 5));
+  const [stats, setStats] = useState(emptyDashboardStats);
+  const [recentReports, setRecentReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     Promise.all([
-      fetchJson('/api/dashboard/stats', stats),
-      fetchJson('/api/reports?limit=5', dummyReports.slice(0, 5)),
+      fetchJson('/api/dashboard/stats', emptyDashboardStats),
+      fetchJson('/api/reports?limit=5', []),
     ]).then(([statsData, reportsData]) => {
       if (!mounted) return;
       setStats((prev) => ({ ...prev, ...statsData }));
@@ -71,10 +71,10 @@ export default function AdminDashboardPage() {
           <>{Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}</>
         ) : (
           <>
-            <StatCard icon={FileText} label={t('stat_total_reports')} value={stats.totalReports} trend="12%" trendUp />
-            <StatCard icon={AlertCircle} label={t('stat_pending')} value={stats.pendingReports} trend="5%" trendUp={false} />
-            <StatCard icon={Clock} label={t('stat_processing')} value={stats.inProgressReports} trend="3%" trendUp />
-            <StatCard icon={CheckCircle} label={t('stat_resolved')} value={stats.completedReports} trend="18%" trendUp />
+            <StatCard icon={FileText} label={t('stat_total_reports')} value={stats.totalReports} />
+            <StatCard icon={AlertCircle} label={t('stat_pending')} value={stats.pendingReports} />
+            <StatCard icon={Clock} label={t('stat_processing')} value={stats.inProgressReports} />
+            <StatCard icon={CheckCircle} label={t('stat_resolved')} value={stats.completedReports} />
           </>
         )}
       </div>
@@ -85,9 +85,9 @@ export default function AdminDashboardPage() {
           <>{Array.from({ length: 3 }).map((_, i) => <StatCardSkeleton key={i} />)}</>
         ) : (
           <>
-            <StatCard icon={TrendingUp} label={t('stat_resolution_rate')} value={`${resolutionRate}%`} trend="4%" trendUp accent />
-            <StatCard icon={Store} label={t('stat_active_umkm')} value={stats.activeUMKM} trend="5%" trendUp />
-            <StatCard icon={Users} label={t('stat_total_citizens')} value={`${(stats.totalCitizens / 1000).toFixed(1)}K`} trend="2%" trendUp />
+            <StatCard icon={TrendingUp} label={t('stat_resolution_rate')} value={`${resolutionRate}%`} accent />
+            <StatCard icon={Store} label={t('stat_active_umkm')} value={stats.activeUMKM} />
+            <StatCard icon={Users} label={t('stat_total_citizens')} value={`${(stats.totalCitizens / 1000).toFixed(1)}K`} />
           </>
         )}
       </div>

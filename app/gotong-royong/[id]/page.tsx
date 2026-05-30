@@ -9,12 +9,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { use } from 'react';
 import { Users, MapPin, Calendar, Clock, ChevronLeft, CheckCircle, Loader2, Share2 } from 'lucide-react';
-import { dummyActions } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 export default function GotongRoyongDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [action, setAction] = useState<any>(dummyActions.find((a) => a.id === id) ?? null);
+  const [action, setAction] = useState<any>(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [joined, setJoined] = useState(false);
@@ -22,7 +21,7 @@ export default function GotongRoyongDetailPage({ params }: { params: Promise<{ i
 
   useEffect(() => {
     let mounted = true;
-    fetchJson(`/api/actions/${id}`, dummyActions.find((a) => a.id === id) ?? null).then((data) => {
+    fetchJson(`/api/actions/${id}`, null).then((data) => {
       if (!mounted) return;
       setAction(data);
       setInitialLoading(false);

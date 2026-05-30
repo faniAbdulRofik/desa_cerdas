@@ -3,7 +3,6 @@
  * GET: List all UMKM products. POST: Create. PUT: Update. DELETE: Remove.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyProducts } from '@/lib/dummy-data';
 import { deleteRow, getRowById, insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
@@ -12,13 +11,12 @@ export async function GET(request: NextRequest) {
   const id = searchParams.get('id');
 
   if (id) {
-    const fallback = dummyProducts.find((product) => product.id === id) ?? null;
-    const product = await getRowById('products', id, fallback);
+    const product = await getRowById('products', id);
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(product);
   }
 
-  const products = await listRows('products', dummyProducts, {
+  const products = await listRows('products', [], {
     filters: { store_id },
     order: { column: 'created_at', ascending: false },
   });

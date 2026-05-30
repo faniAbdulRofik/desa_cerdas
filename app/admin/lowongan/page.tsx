@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Briefcase, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
-import { dummyJobs } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -20,7 +19,7 @@ export default function AdminLowonganPage() {
   const t = useTranslations('admin_lowongan');
   const TYPE_LABEL: Record<string, string> = { full_time: t('col_type') === 'Tipe' ? 'Full Time' : 'Full Time', part_time: 'Part Time', freelance: 'Freelance', volunteer: 'Volunteer' };
   
-  const [jobs, setJobs] = useState<Job[]>(dummyJobs as any[]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -30,7 +29,7 @@ export default function AdminLowonganPage() {
 
   async function load() {
     setLoading(true);
-    setJobs(await fetchJson('/api/jobs', dummyJobs as any[]));
+    setJobs(await fetchJson('/api/jobs', []));
     setLoading(false);
   }
 
@@ -44,7 +43,13 @@ export default function AdminLowonganPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editId ? { id: editId, ...form } : form),
     });
-    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...form };
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Gagal menyimpan data.');
+      setSaving(false);
+      return;
+    }
+    const saved = await res.json();
     if (editId) {
       setJobs(prev => prev.map(j => j.id === editId ? { ...j, ...saved } as any : j));
     } else {
@@ -55,17 +60,19 @@ export default function AdminLowonganPage() {
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
-    await fetch(`/api/jobs?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
-    setJobs(prev => prev.filter(j => j.id !== id));
+    const res = await fetch(`/api/jobs?id=${id}`, { method: 'DELETE' });
+    if (res.ok) setJobs(prev => prev.filter(j => j.id !== id));
+    else setError('Gagal menghapus data.');
   }
 
   async function toggleActive(id: string, current: boolean) {
-    await fetch('/api/jobs', {
+    const res = await fetch('/api/jobs', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, is_active: !current }),
-    }).catch(() => undefined);
-    setJobs(prev => prev.map(j => j.id === id ? { ...j, is_active: !current } : j));
+    });
+    if (res.ok) setJobs(prev => prev.map(j => j.id === id ? { ...j, is_active: !current } : j));
+    else setError('Gagal memperbarui status.');
   }
 
   function startEdit(j: Job) {

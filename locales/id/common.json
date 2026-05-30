@@ -190,6 +190,8 @@
     "stat_paused": "Ditunda",
     "progress": "Progres Fisik",
     "budget": "Total Anggaran",
+    "col_category": "Kategori",
+    "col_status": "Status",
     "spent": "Terserap",
     "hide_detail": "Sembunyikan Detail",
     "show_detail": "Detail Proyek",

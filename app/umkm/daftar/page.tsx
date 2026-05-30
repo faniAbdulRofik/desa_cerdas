@@ -29,7 +29,7 @@ export default function DaftarUMKMPage() {
   // Success state
   if (success) {
     return (
-      <div className="min-h-screen bg-bg pt-28 pb-16 px-4">
+      <div className="min-h-screen bg-bg pt-14 lg:pt-16 pb-16 px-4">
         <div className="max-w-md mx-auto text-center">
           <div className="bg-white border border-gray-200 p-10">
             <div className="w-16 h-16 mx-auto mb-4 bg-green-50 border border-green-200 flex items-center justify-center">
@@ -56,7 +56,7 @@ export default function DaftarUMKMPage() {
 
   // Registration form
   return (
-    <div className="min-h-screen bg-bg pt-28 pb-16 px-4">
+    <div className="min-h-screen bg-bg pt-14 lg:pt-16 pb-16 px-4">
       <div className="max-w-lg mx-auto">
         <Link href="/umkm" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-primary-700 mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Kembali ke Marketplace

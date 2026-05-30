@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Landmark, Search, Building2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { dummyProjects } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -75,12 +74,12 @@ function ProjectCard({ project, t }: { project: Project; t: any }) {
 
 export default function TransparansiPage() {
   const t = useTranslations('transparansi');
-  const [projects, setProjects] = useState<Project[]>(dummyProjects as any[]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/projects', dummyProjects as any[]).then((data) => {
+    fetchJson('/api/projects', []).then((data) => {
       if (mounted) setProjects(data);
     });
     return () => { mounted = false; };
@@ -94,8 +93,8 @@ export default function TransparansiPage() {
   const totalSpent = projects.reduce((a, p) => a + p.spent, 0);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-24">
-      <div className="flex flex-col lg:flex-row lg:items-end gap-10 mb-16">
+    <div className="max-w-5xl mx-auto px-6 py-14 lg:py-16">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-6 lg:gap-8 mb-10">
         <h1 className="text-4xl md:text-[42px] font-semibold text-primary-800 tracking-tight shrink-0 mr-8">
           {t('title_1')}<br />{t('title_2')}
         </h1>
@@ -115,7 +114,7 @@ export default function TransparansiPage() {
         </div>
       </div>
       
-      <div className="mb-12 border-b border-gray-200 pb-6 flex justify-between items-center gap-6">
+      <div className="mb-8 lg:mb-10 border-b border-gray-200 pb-6 flex justify-between items-center gap-6">
         <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t('list_title')}</div>
         <div className="relative w-full md:w-64">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

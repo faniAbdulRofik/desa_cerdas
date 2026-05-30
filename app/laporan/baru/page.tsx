@@ -145,7 +145,7 @@ export default function NewReportPage() {
 
   if (done) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-20 text-center">
+      <div className="max-w-lg mx-auto px-4 py-14 lg:py-16 text-center">
         <div className="w-16 h-16 bg-green-50 flex items-center justify-center mx-auto mb-4 border border-green-100">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>

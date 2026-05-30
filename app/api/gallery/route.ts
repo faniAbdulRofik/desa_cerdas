@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyGallery } from '@/lib/dummy-data';
 import { deleteRow, insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
-  const gallery = await listRows('gallery', dummyGallery, {
+  const gallery = await listRows('gallery', [], {
     filters: { category },
     order: { column: 'date', ascending: false },
   });

@@ -3,7 +3,6 @@
  * PATCH: Update order (status change, add AWB, etc.)
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyOrders } from '@/lib/dummy-data';
 import { getRowById, jsonError, updateRow } from '@/lib/api-helpers';
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -18,8 +17,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const fallback = dummyOrders.find((order) => order.id === id) ?? null;
-  const order = await getRowById('orders', id, fallback, '*, order_items(*, products(*))');
+  const order = await getRowById('orders', id, null, '*, order_items(*, products(*))');
 
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(order);

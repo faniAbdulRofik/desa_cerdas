@@ -12,7 +12,6 @@ import {
   Share2, Loader2, Send, X, Copy, Check,
 } from 'lucide-react';
 import { DetailSkeleton } from '@/components/ui/Skeletons';
-import { dummyReportHistory, dummyReports } from '@/lib/dummy-data';
 import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
 import { AISolutionCard } from '@/components/ui/AISolutionCard';
 import { ReportTimeline } from '@/components/ui/ReportTimeline';
@@ -42,7 +41,7 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
-  const [history, setHistory] = useState(dummyReportHistory.filter((h) => h.report_id === id));
+  const [history, setHistory] = useState<any[]>([]);
 
   // Share state
   const [shareOpen, setShareOpen] = useState(false);
@@ -52,7 +51,7 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   // Load report
   useEffect(() => {
     async function load() {
-      const data = await fetchJson(`/api/reports/${id}`, dummyReports.find(r => r.id === id) ?? null);
+      const data = await fetchJson(`/api/reports/${id}`, null);
       if (data) setReport(data);
       setLoading(false);
     }
@@ -73,9 +72,7 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
   // Load comments
   useEffect(() => {
     let mounted = true;
-    fetchJson(`/api/reports/${id}/comments`, [
-      { id: '1', report_id: id, user_id: 'u1', author_name: 'Budi Santoso', content: 'Semoga cepat ditangani oleh pihak berwenang.', created_at: new Date(Date.now() - 3600000).toISOString() }
-    ]).then((data) => {
+    fetchJson<Comment[]>(`/api/reports/${id}/comments`, []).then((data) => {
       if (mounted) setComments(data);
     });
     return () => { mounted = false; };
@@ -83,7 +80,7 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     let mounted = true;
-    fetchJson(`/api/reports/${id}/history`, dummyReportHistory.filter((h) => h.report_id === id)).then((data) => {
+    fetchJson<any[]>(`/api/reports/${id}/history`, []).then((data) => {
       if (mounted) setHistory(data);
     });
     return () => { mounted = false; };
@@ -125,13 +122,14 @@ export default function LaporanDetailPage({ params }: { params: Promise<{ id: st
     if (!commentText.trim()) return;
     setSendingComment(true);
     try {
-      const fallback = { id: Math.random().toString(), report_id: id, user_id: 'me', author_name: 'Warga', content: commentText, created_at: new Date().toISOString() };
+      const payload = { user_id: 'me', author_name: 'Warga', content: commentText };
       const res = await fetch(`/api/reports/${id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fallback),
+        body: JSON.stringify(payload),
       });
-      const saved = res.ok ? await res.json() : fallback;
+      if (!res.ok) return;
+      const saved = await res.json();
       setComments((prev) => [...prev, saved]);
       setCommentText('');
     } finally {

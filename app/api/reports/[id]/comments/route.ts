@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyComments } from '@/lib/dummy-data';
 import { insertRow, jsonError, listRows } from '@/lib/api-helpers';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const fallback = dummyComments.filter((comment) => comment.report_id === id);
-  const comments = await listRows('comments', fallback, {
+  const comments = await listRows('comments', [], {
     filters: { report_id: id },
     order: { column: 'created_at', ascending: true },
   });

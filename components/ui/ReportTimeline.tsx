@@ -4,7 +4,7 @@
  * Full lifecycle timeline for a report's status changes.
  */
 import { CheckCircle, Clock, AlertCircle, Circle } from 'lucide-react';
-import type { ReportHistory } from '@/lib/dummy-data';
+import type { ReportHistory } from '@/lib/types';
 import { formatRelativeTime } from '@/lib/utils';
 
 const TIMELINE_STEPS = [

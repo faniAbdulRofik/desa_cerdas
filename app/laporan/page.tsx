@@ -9,7 +9,6 @@ import { Search, Filter, Plus, FileText, SlidersHorizontal } from 'lucide-react'
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { ReportCard } from '@/components/ui/ReportCard';
 import { useTranslations } from 'next-intl';
-import { dummyReports } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 export default function LaporanPage() {
@@ -32,7 +31,7 @@ export default function LaporanPage() {
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/reports', dummyReports).then((data) => {
+    fetchJson('/api/reports', []).then((data) => {
       if (!mounted) return;
       setReports(data);
       setLoading(false);
@@ -61,9 +60,9 @@ export default function LaporanPage() {
 
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-24">
+    <div className="max-w-7xl mx-auto px-6 py-14 lg:py-16">
       {/* Page header */}
-      <div className="flex flex-col lg:flex-row lg:items-end gap-10 mb-16">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-6 lg:gap-8 mb-10">
         <h1 className="text-4xl md:text-[42px] font-semibold text-primary-800 tracking-tight shrink-0 mr-8">
           {t('title_1')}<br />{t('title_2')}
         </h1>
@@ -77,7 +76,7 @@ export default function LaporanPage() {
       </div>
 
       {/* Search + Filter bar */}
-      <div className="mb-12 border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+      <div className="mb-8 lg:mb-10 border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div className="flex gap-2 overflow-x-auto scrollbar-none w-full md:w-auto">
           {CATEGORIES.map((c) => (
             <button
@@ -125,7 +124,7 @@ export default function LaporanPage() {
           {filtered.map((report) => <ReportCard key={report.id} report={report} />)}
         </div>
       ) : (
-        <div className="py-20 text-center">
+        <div className="py-14 lg:py-16 text-center">
           <div className="w-16 h-16 bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto mb-4">
             <FileText className="w-8 h-8 text-gray-400" />
           </div>

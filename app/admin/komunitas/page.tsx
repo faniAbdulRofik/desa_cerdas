@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Eye, EyeOff } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
-import { dummyArticles } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -17,7 +16,7 @@ const EMPTY = { title: '', excerpt: '', content: '', category: 'Umum', author: '
 export default function AdminKomunitasPage() {
   const t = useTranslations('admin_komunitas');
   
-  const [articles, setArticles] = useState<Article[]>(dummyArticles as any[]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -27,7 +26,7 @@ export default function AdminKomunitasPage() {
 
   async function load() {
     setLoading(true);
-    setArticles(await fetchJson('/api/articles', dummyArticles as any[]));
+    setArticles(await fetchJson('/api/articles', []));
     setLoading(false);
   }
 
@@ -41,7 +40,13 @@ export default function AdminKomunitasPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editId ? { id: editId, ...form } : form),
     });
-    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...form };
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Gagal menyimpan data.');
+      setSaving(false);
+      return;
+    }
+    const saved = await res.json();
     if (editId) {
       setArticles(prev => prev.map(a => a.id === editId ? { ...a, ...saved } as any : a));
     } else {
@@ -52,17 +57,19 @@ export default function AdminKomunitasPage() {
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
-    await fetch(`/api/articles?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
-    setArticles(prev => prev.filter(a => a.id !== id));
+    const res = await fetch(`/api/articles?id=${id}`, { method: 'DELETE' });
+    if (res.ok) setArticles(prev => prev.filter(a => a.id !== id));
+    else setError('Gagal menghapus data.');
   }
 
   async function togglePublish(id: string, current: boolean) {
-    await fetch('/api/articles', {
+    const res = await fetch('/api/articles', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, is_published: !current }),
-    }).catch(() => undefined);
-    setArticles(prev => prev.map(a => a.id === id ? { ...a, is_published: !current } : a));
+    });
+    if (res.ok) setArticles(prev => prev.map(a => a.id === id ? { ...a, is_published: !current } : a));
+    else setError('Gagal memperbarui status.');
   }
 
 

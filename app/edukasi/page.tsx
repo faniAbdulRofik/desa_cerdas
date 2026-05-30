@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { GraduationCap, Star, Users, Clock, ChevronRight, Search, BookOpen, Award } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { dummyModules } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -80,13 +79,13 @@ export default function EdukasiPage() {
   const CATEGORIES = [t('cat_all'), t('cat_biz'), t('cat_agri'), t('cat_env'), t('cat_fin'), t('cat_health'), t('cat_art')];
   const DB_CATS = ['Semua', 'Bisnis & Marketing', 'Pertanian', 'Lingkungan', 'Keuangan', 'Kesehatan & Keselamatan', 'Kerajinan & Seni'];
 
-  const [modules, setModules] = useState<any[]>(dummyModules);
+  const [modules, setModules] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/training-modules', dummyModules).then((data) => {
+    fetchJson('/api/training-modules', []).then((data) => {
       if (mounted) setModules(data);
     });
     return () => { mounted = false; };
@@ -103,8 +102,8 @@ export default function EdukasiPage() {
 
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-24">
-      <div className="flex flex-col lg:flex-row lg:items-end gap-10 mb-16">
+    <div className="max-w-7xl mx-auto px-6 py-14 lg:py-16">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-6 lg:gap-8 mb-10">
         <h1 className="text-4xl md:text-[42px] font-semibold text-primary-800 tracking-tight shrink-0">
           {t('title_1')}<br />{t('title_2')}
         </h1>
@@ -116,7 +115,7 @@ export default function EdukasiPage() {
         </div>
       </div>
       
-      <div className="mb-12 border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="mb-8 lg:mb-10 border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
           {t('subtitle')}
         </div>

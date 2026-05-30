@@ -224,7 +224,7 @@ function NavItemComponent({ item }: { item: NavItem }) {
       {hasDropdown && (
         <div className="absolute top-full left-0 right-0 pt-0 opacity-0 invisible group-hover/nav:opacity-100 group-hover/nav:visible transition-all duration-300 z-50">
           <div className="bg-white shadow-md border-t border-b border-gray-100 py-6 px-12 relative overflow-hidden flex justify-center w-full">
-            <div className="flex gap-12 w-full max-w-[1400px]">
+            <div className="flex gap-8 w-full max-w-[1400px]">
               {item.groups ? (
                 // MEGA MENU
                 item.groups.map((group, gIdx) => (
@@ -364,7 +364,7 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto pt-8 px-6 pb-20 flex flex-col">
+        <div className="flex-1 overflow-y-auto pt-8 px-6 pb-12 lg:pb-14 flex flex-col">
           <div className="flex flex-col gap-1">
             {NAV_ITEMS.map((group) => (
               <div key={group.label} className="border-b border-gray-100 pb-2 mb-2">
@@ -380,8 +380,8 @@ export function Navbar() {
                     </button>
                     {mobileOpenGroup === group.label && (group.groups || group.children) && (
                       <div className="flex flex-col gap-4 pt-2 pb-6 pl-4 border-l-2 border-gray-100 ml-2">
-                        {group.groups?.map(subGroup => (
-                          <div key={subGroup.titleKey || Math.random()} className="flex flex-col gap-2 mb-2">
+                        {group.groups?.map((subGroup, subGroupIndex) => (
+                          <div key={subGroup.titleKey || `${group.label}-${subGroupIndex}`} className="flex flex-col gap-2 mb-2">
                             {subGroup.titleKey && <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{subGroup.titleKey}</span>}
                             <div className="flex flex-col gap-4 pl-2">
                                {subGroup.items.map(child => (

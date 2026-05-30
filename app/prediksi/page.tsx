@@ -2,10 +2,9 @@
 /**
  * app/prediksi/page.tsx — Redesigned v2
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Zap, Loader2, RefreshCw, AlertTriangle, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
-import { dummyPredictions } from '@/lib/dummy-data';
-import type { AIPrediction } from '@/lib/dummy-data';
+import type { AIPrediction } from '@/lib/types';
 import { useTranslations, useLocale } from 'next-intl';
 
 function getRiskConfig(t: any) {
@@ -70,7 +69,7 @@ function PredictionCard({ pred, t }: { pred: AIPrediction; t: any }) {
 export default function PrediksiPage() {
   const t = useTranslations('prediksi');
   const locale = useLocale();
-  const [predictions, setPredictions] = useState(dummyPredictions);
+  const [predictions, setPredictions] = useState<AIPrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
@@ -85,8 +84,12 @@ export default function PrediksiPage() {
     setLoading(false);
   }
 
+  useEffect(() => {
+    refresh();
+  }, []);
+
   return (
-    <div className="max-w-5xl mx-auto px-6 py-24">
+    <div className="max-w-5xl mx-auto px-6 py-14 lg:py-16">
       {/* Header card */}
       <div className="bg-primary-950 text-white p-8 lg:p-12 mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10">
@@ -142,7 +145,7 @@ export default function PrediksiPage() {
       </div>
 
       {/* Admin CTA */}
-      <div className="mt-12 bg-gray-50 border border-gray-200 p-8 text-center flex flex-col items-center">
+      <div className="mt-8 lg:mt-10 bg-gray-50 border border-gray-200 p-8 text-center flex flex-col items-center">
         <TrendingUp className="w-8 h-8 text-primary-800 mb-4" />
         <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('admin_cta_title')}</h3>
         <p className="text-sm text-gray-500 mb-8 max-w-md">{t('admin_cta_desc')}</p>

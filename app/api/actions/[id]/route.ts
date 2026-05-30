@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyActions } from '@/lib/dummy-data';
 import { deleteRow, getRowById, jsonError, updateRow } from '@/lib/api-helpers';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const fallback = dummyActions.find((action) => action.id === id) ?? null;
-  const action = await getRowById('community_actions', id, fallback);
+  const action = await getRowById('community_actions', id);
 
   if (!action) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(action);

@@ -15,16 +15,15 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { dummyCategoryData, dummyTrendData } from '@/lib/dummy-data';
 import { useEffect, useState } from 'react';
 import { fetchJson } from '@/lib/api-client';
 
 export function CategoryBarChart() {
-  const [data, setData] = useState(dummyCategoryData);
+  const [data, setData] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchJson('/api/dashboard/stats', { categoryData: dummyCategoryData }).then((stats) => {
-      setData(stats.categoryData ?? dummyCategoryData);
+    fetchJson('/api/dashboard/stats', { categoryData: [] as any[] }).then((stats) => {
+      setData(stats.categoryData ?? []);
     });
   }, []);
 
@@ -48,11 +47,11 @@ export function CategoryBarChart() {
 }
 
 export function TrendLineChart() {
-  const [data, setData] = useState(dummyTrendData);
+  const [data, setData] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchJson('/api/dashboard/stats', { trendData: dummyTrendData }).then((stats) => {
-      setData(stats.trendData ?? dummyTrendData);
+    fetchJson('/api/dashboard/stats', { trendData: [] as any[] }).then((stats) => {
+      setData(stats.trendData ?? []);
     });
   }, []);
 

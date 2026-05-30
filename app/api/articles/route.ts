@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyArticles } from '@/lib/dummy-data';
 import { deleteRow, insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
@@ -7,7 +6,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const is_published = searchParams.get('is_published');
 
-  const articles = await listRows('articles', dummyArticles, {
+  const articles = await listRows('articles', [], {
     filters: {
       category,
       is_published: is_published === null ? undefined : is_published === 'true',

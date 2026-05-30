@@ -55,7 +55,7 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div className="relative z-10 mb-20">
+        <div className="relative z-10 mb-12">
           <h1 className="text-4xl text-white font-semibold leading-tight mb-6">
             {t('login_title_1')} <br />
             <span className="text-primary-300">{t('login_title_2')}</span> <br />
@@ -76,7 +76,7 @@ export default function LoginPage() {
       {/* ── Right Side: Form Panel ── */}
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 md:px-16 lg:px-24 py-12 bg-white relative">
         {/* Mobile Header (Hidden on Desktop) */}
-        <div className="md:hidden flex flex-col mb-12">
+        <div className="md:hidden flex flex-col mb-8 lg:mb-10">
           <Link href="/">
             <Image src="/logo.webp" alt="DesaMind" width={140} height={40} className="h-9 w-auto object-contain mb-6" />
           </Link>
