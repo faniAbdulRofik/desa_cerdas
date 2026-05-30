@@ -11,24 +11,24 @@ import {
 import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { ReportCard } from '@/components/ui/ReportCard';
 import { useTranslations } from 'next-intl';
-import { dummyReports, dummyStats } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
+const emptyHomeStats = {
+  reports: 0,
+  products: 0,
+  resolved: 0,
+};
 
 export default function HomePage() {
   const t = useTranslations('home');
-  const [latestReports, setLatestReports] = useState(dummyReports.slice(0, 4));
-  const [stats, setStats] = useState({
-    reports: dummyStats.totalReports,
-    products: dummyStats.activeUMKM,
-    resolved: dummyStats.completedReports,
-  });
+  const [latestReports, setLatestReports] = useState<any[]>([]);
+  const [stats, setStats] = useState(emptyHomeStats);
 
   useEffect(() => {
     let mounted = true;
     Promise.all([
-      fetchJson('/api/reports?limit=4', dummyReports.slice(0, 4)),
-      fetchJson('/api/stats', stats),
+      fetchJson('/api/reports?limit=4', []),
+      fetchJson('/api/stats', emptyHomeStats),
     ]).then(([reportsData, statsData]) => {
       if (!mounted) return;
       setLatestReports(reportsData);
@@ -43,12 +43,12 @@ export default function HomePage() {
     <div className="flex flex-col w-full overflow-hidden bg-bg">
       
       {/* 1. HERO SECTION (Modern Minimalist & Elegant) */}
-      <AnimatedSection className="relative pt-24 pb-20 lg:pt-32 lg:pb-28 bg-gradient-to-br from-[#FAFAFA] via-surface to-[#F2EFE9] overflow-hidden">
+      <AnimatedSection className="relative pt-10 pb-12 md:pt-12 md:pb-14 lg:pt-16 lg:pb-16 bg-gradient-to-br from-[#FAFAFA] via-surface to-[#F2EFE9] overflow-hidden">
         {/* Modern minimal background effects */}
         <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 w-[800px] h-[800px] bg-primary-100/40 rounded-full blur-[100px] -z-10 pointer-events-none" />
         <div className="absolute bottom-0 left-0 translate-y-1/4 -translate-x-1/4 w-[600px] h-[600px] bg-primary-50/50 rounded-full blur-[80px] -z-10 pointer-events-none" />
         
-        <div className="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           
           {/* Image Area (Top on Mobile, Right on Desktop) */}
           <div className="lg:col-span-7 relative order-1 lg:order-2">
@@ -105,15 +105,15 @@ export default function HomePage() {
       </AnimatedSection>
 
       {/* 2. INITIATIVES (Tall Hover Image Cards) */}
-      <section className="py-32 bg-bg overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-start">
+      <section className="py-14 lg:py-16 bg-bg overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           {/* Left Text Block */}
           <AnimatedSection as="div" animation="fade-from-left" className="lg:col-span-5 lg:pr-8 py-4 flex flex-col h-full lg:min-h-[450px]">
             <div>
               <h2 className="text-4xl md:text-5xl lg:text-[50px] font-semibold text-primary-950 leading-[1.1] mb-6 tracking-tight">
                 {t('initiatives.title_1')}<br />{t('initiatives.title_2')}
               </h2>
-              <p className="text-gray-500 text-sm md:text-base leading-relaxed max-w-sm mb-12 lg:mb-0">
+              <p className="text-gray-500 text-sm md:text-base leading-relaxed max-w-sm mb-8 lg:mb-0">
                 {t('initiatives.desc')}
               </p>
             </div>
@@ -194,7 +194,7 @@ export default function HomePage() {
       </section>
 
       {/* 3. HOW WE TURN VISION INTO ACTION (Soft Cards) */}
-      <section className="py-20 bg-bg overflow-hidden">
+      <section className="py-14 lg:py-16 bg-bg overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <AnimatedSection as="div" animation="fade-from-left" className="lg:col-span-1 lg:pr-8 flex flex-col justify-start pt-4 mb-8 lg:mb-0">
@@ -278,8 +278,8 @@ export default function HomePage() {
       </section>
 
       {/* 4. THE DIFFERENCE WE MAKE (Image left, states right) */}
-      <section className="py-20 bg-bg overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section className="py-14 lg:py-16 bg-bg overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
           <AnimatedSection as="div" animation="fade-from-left" className="w-full aspect-[16/9] relative bg-gray-200">
             <Image src="/hero-banner.jpg" alt="Dampak Sosial" fill className="object-cover" />
           </AnimatedSection>
@@ -288,7 +288,7 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold text-primary-700 mb-6 tracking-tight">
               {t('difference.title')}
             </h2>
-            <p className="text-[13px] text-gray-500 leading-relaxed mb-16 max-w-md">
+            <p className="text-[13px] text-gray-500 leading-relaxed mb-8 lg:mb-10 max-w-md">
               {t('difference.desc')}
             </p>
             
@@ -311,11 +311,11 @@ export default function HomePage() {
       </section>
 
       {/* 5. OUR FLAGSHIP PROGRAM */}
-      <section className="py-20 bg-bg overflow-hidden">
+      <section className="py-14 lg:py-16 bg-bg overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <AnimatedSection as="div" animation="fade-up">
             <h2 className="text-2xl font-bold text-primary-700 mb-3 tracking-tight">{t('flagship.title')}</h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-12">{t('flagship.desc')}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-8 lg:mb-10">{t('flagship.desc')}</p>
           </AnimatedSection>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -362,9 +362,9 @@ export default function HomePage() {
       </section>
 
       {/* 6. LAPORAN TERBARU */}
-      <section className="py-24 bg-bg border-t border-gray-200/50 overflow-hidden">
+      <section className="py-14 lg:py-16 bg-bg border-t border-gray-200/50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
-          <AnimatedSection as="div" animation="fade-from-left" className="flex justify-between items-end mb-12">
+          <AnimatedSection as="div" animation="fade-from-left" className="flex justify-between items-end mb-8 lg:mb-10">
             <h2 className="text-2xl font-bold text-primary-950">{t('impact.title')}</h2>
             <Link href="/laporan" className="text-[10px] font-bold tracking-widest uppercase text-white bg-primary-700 px-6 py-2">
               {t('impact.view_all')}

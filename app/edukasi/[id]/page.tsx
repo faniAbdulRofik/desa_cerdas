@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import { GraduationCap, Star, Users, Clock, ChevronLeft, CheckCircle, PlayCircle, Lock } from 'lucide-react';
-import { dummyModules, type TrainingModule } from '@/lib/dummy-data';
+import type { TrainingModule } from '@/lib/types';
 import { fetchJson } from '@/lib/api-client';
 
 const LEVEL_STYLES: Record<string, string> = {
@@ -19,13 +19,13 @@ const LEVEL_STYLES: Record<string, string> = {
 
 export default function EdukasiDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [mod, setMod] = useState<TrainingModule | null>(dummyModules.find((m) => m.id === id) ?? null);
+  const [mod, setMod] = useState<TrainingModule | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [enrolled, setEnrolled] = useState(false);
   useEffect(() => {
     let mounted = true;
-    fetchJson<TrainingModule | null>(`/api/training-modules/${id}`, dummyModules.find((m) => m.id === id) ?? null).then((data) => {
+    fetchJson<TrainingModule | null>(`/api/training-modules/${id}`, null).then((data) => {
       if (!mounted) return;
       setMod(data);
       setLoading(false);
@@ -47,7 +47,7 @@ export default function EdukasiDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Hero */}
       <div className="relative h-52 overflow-hidden mb-6 shadow-md border border-gray-200">
-        <Image src={mod.image_url} alt={mod.title} fill className="object-cover" />
+        <Image src={mod.image_url || '/file.svg'} alt={mod.title} fill className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-4 left-4 flex gap-2">
           <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border ${LEVEL_STYLES[mod.level]}`}>{mod.level}</span>

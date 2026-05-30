@@ -3,18 +3,18 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MessageCircle, Book } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { dummyArticles } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
+import type { Article } from '@/lib/types';
 
 export default function KomunitasPage() {
-  const [articles, setArticles] = useState(dummyArticles);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [tab, setTab] = useState<'diskusi' | 'artikel'>('artikel');
   const t = useTranslations('community');
   const locale = useLocale();
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/articles', dummyArticles).then((data) => {
+    fetchJson<Article[]>('/api/articles', []).then((data) => {
       if (mounted) setArticles(data);
     });
     return () => { mounted = false; };
@@ -31,8 +31,8 @@ export default function KomunitasPage() {
 
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-24">
-      <div className="flex flex-col lg:flex-row lg:items-end gap-10 mb-16">
+    <div className="max-w-7xl mx-auto px-6 py-14 lg:py-16">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-6 lg:gap-8 mb-10">
         <h1 className="text-4xl md:text-[42px] font-semibold text-primary-800 tracking-tight shrink-0">
           {t('title')}
         </h1>

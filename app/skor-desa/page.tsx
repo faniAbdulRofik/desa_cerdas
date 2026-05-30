@@ -3,23 +3,33 @@
  * app/skor-desa/page.tsx — Redesigned v2
  * Village Health Score with radar chart, metric bars, AI narrative.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Activity, Sparkles, TrendingUp, TrendingDown, Minus, Loader2, RefreshCw } from 'lucide-react';
-import { dummyHealthScore } from '@/lib/dummy-data';
 import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
+import { fetchJson } from '@/lib/api-client';
+import type { HealthScore } from '@/lib/types';
+
+const EMPTY_HEALTH_SCORE: HealthScore = {
+  overall: 0,
+  grade: 'Perlu Perhatian',
+  metrics: { cleanliness: 0, infrastructure: 0, safety: 0, health: 0, economy: 0, community: 0 },
+  trend: 'stabil',
+  ai_narrative: 'Belum ada data laporan dan aktivitas desa yang cukup untuk membuat analisis.',
+  last_updated: new Date().toISOString(),
+};
 
 const RadarChart = dynamic(
   () => import('recharts').then((m) => {
     const { RadarChart: RC, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } = m;
-    return function Chart({ labels }: { labels: any }) {
+    return function Chart({ labels, score }: { labels: any; score: HealthScore }) {
       const data = [
-        { subject: labels.cleanliness,  A: dummyHealthScore.metrics.cleanliness },
-        { subject: labels.infrastructure, A: dummyHealthScore.metrics.infrastructure },
-        { subject: labels.safety,    A: dummyHealthScore.metrics.safety },
-        { subject: labels.health,   A: dummyHealthScore.metrics.health },
-        { subject: labels.economy,     A: dummyHealthScore.metrics.economy },
-        { subject: labels.community,   A: dummyHealthScore.metrics.community },
+        { subject: labels.cleanliness,  A: score.metrics.cleanliness },
+        { subject: labels.infrastructure, A: score.metrics.infrastructure },
+        { subject: labels.safety,    A: score.metrics.safety },
+        { subject: labels.health,   A: score.metrics.health },
+        { subject: labels.economy,     A: score.metrics.economy },
+        { subject: labels.community,   A: score.metrics.community },
       ];
       return (
         <ResponsiveContainer width="100%" height={240}>
@@ -78,10 +88,20 @@ const METRICS = [
 export default function SkorDesaPage() {
   const t = useTranslations('skor_desa');
   const locale = useLocale();
-  const score = dummyHealthScore;
+  const [score, setScore] = useState<HealthScore>(EMPTY_HEALTH_SCORE);
   const gradeColor = GRADE_COLORS[score.grade] ?? 'text-primary-600';
   const [regenerating, setRegenerating] = useState(false);
   const [narrative, setNarrative] = useState(score.ai_narrative);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchJson<HealthScore>('/api/ai/health-score', EMPTY_HEALTH_SCORE).then((data) => {
+      if (!mounted) return;
+      setScore(data);
+      setNarrative(data.ai_narrative);
+    });
+    return () => { mounted = false; };
+  }, []);
 
   async function regenerate() {
     setRegenerating(true);
@@ -96,9 +116,9 @@ export default function SkorDesaPage() {
   const TrendIcon = score.trend === 'naik' ? TrendingUp : score.trend === 'turun' ? TrendingDown : Minus;
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-24">
+    <div className="max-w-5xl mx-auto px-6 py-14 lg:py-16">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-end gap-10 mb-16">
+      <div className="flex flex-col lg:flex-row lg:items-end gap-6 lg:gap-8 mb-10">
         <h1 className="text-4xl md:text-[42px] font-semibold text-primary-800 tracking-tight shrink-0 mr-8">
           {t('title_1')}<br />{t('title_2')}
         </h1>
@@ -151,7 +171,7 @@ export default function SkorDesaPage() {
               health: t('health'),
               economy: t('economy'),
               community: t('community')
-            }} />
+            }} score={score} />
           </div>
         </div>
       </div>

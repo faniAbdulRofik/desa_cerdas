@@ -18,11 +18,11 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#0A100D] text-gray-300 mt-auto pt-20 pb-10 border-t border-gray-800/50">
+    <footer className="bg-[#0A100D] text-gray-300 mt-auto pt-14 lg:pt-16 pb-10 border-t border-gray-800/50">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-8">
         
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 mb-10">
           
           {/* Brand & Visi */}
           <div className="lg:col-span-4 flex flex-col items-start pr-0 lg:pr-12">

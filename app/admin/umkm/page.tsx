@@ -5,21 +5,20 @@ import Image from 'next/image';
 import { Store, Trash2, Phone, Plus, Loader2 } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import AddProductModal from '@/components/admin/AddProductModal';
-import { dummyProducts } from '@/lib/dummy-data';
 import { formatRupiah } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { fetchJson } from '@/lib/api-client';
 
 export default function AdminUMKMPage() {
   const t = useTranslations('admin_umkm');
-  const [products, setProducts] = useState<any[]>(dummyProducts);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetchJson('/api/products', dummyProducts).then((data) => {
+    fetchJson('/api/products', []).then((data) => {
       if (!mounted) return;
       setProducts(data);
       setLoading(false);
@@ -29,8 +28,8 @@ export default function AdminUMKMPage() {
 
   async function deleteProduct(id: string) {
     if (confirm(t('confirm_delete'))) {
-      await fetch(`/api/products?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
-      setProducts((p) => p.filter((prod) => prod.id !== id));
+      const res = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+      if (res.ok) setProducts((p) => p.filter((prod) => prod.id !== id));
     }
   }
 

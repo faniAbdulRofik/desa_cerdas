@@ -3,7 +3,6 @@
  * GET: List community actions. POST: Create a new action.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyActions } from '@/lib/dummy-data';
 import { insertRow, jsonError, listRows, updateRow, deleteRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +10,7 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status');
   const category = searchParams.get('category');
 
-  const actions = await listRows('community_actions', dummyActions, {
+  const actions = await listRows('community_actions', [], {
     filters: { status, category },
     order: { column: 'date', ascending: true },
   });

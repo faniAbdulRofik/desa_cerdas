@@ -16,23 +16,6 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
   dibatalkan: { label: 'Dibatalkan', color: 'bg-red-50 text-red-800 border-red-200', icon: XCircle },
 };
 
-// Dummy Orders for Static View
-const dummyOrders = [
-  {
-     id: 'ORD-1001', status: 'terbayar', total_amount: 50000, 
-     buyer_name: 'Budi Santoso', buyer_phone: '081234567890', shipping_address: 'Jl. Merdeka No. 10', payment_method: 'midtrans',
-     created_at: new Date().toISOString(),
-     order_items: [{ products: { name: 'Keripik Singkong', image_url: 'https://picsum.photos/seed/k1/100/100' }, quantity: 2, price: 25000 }],
-     cancellation_status: null
-  },
-  {
-     id: 'ORD-1002', status: 'dikirim', total_amount: 150000, awb_number: 'RESI123456',
-     buyer_name: 'Siti Aminah', buyer_phone: '081298765432', shipping_address: 'Jl. Pahlawan No. 5', payment_method: 'cod',
-     created_at: new Date(Date.now() - 86400000).toISOString(),
-     order_items: [{ products: { name: 'Batik Tulis', image_url: 'https://picsum.photos/seed/b1/100/100' }, quantity: 1, price: 150000 }],
-     cancellation_status: null
-  }
-];
 
 function OrderList() {
   const searchParams = useSearchParams();
@@ -48,7 +31,7 @@ function OrderList() {
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/orders?buyer_id=user-warga', dummyOrders).then((data) => {
+    fetchJson('/api/orders?buyer_id=user-warga', []).then((data) => {
       if (mounted) setOrders(data);
     });
     return () => { mounted = false; };
@@ -324,10 +307,10 @@ function OrderList() {
 
 export default function BuyerOrdersPage() {
   return (
-    <div className="min-h-screen bg-bg pt-24 pb-20 px-4">
+    <div className="min-h-screen bg-bg pt-12 lg:pt-14 pb-12 lg:pb-14 px-4">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-semibold text-primary-900 border-l-4 border-primary-600 pl-4 mb-8">Pesanan Saya</h1>
-        <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary-600" /></div>}>
+        <Suspense fallback={<div className="flex justify-center py-14 lg:py-16"><Loader2 className="w-8 h-8 animate-spin text-primary-600" /></div>}>
           <OrderList />
         </Suspense>
       </div>

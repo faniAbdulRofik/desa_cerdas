@@ -190,6 +190,8 @@
     "stat_paused": "Paused",
     "progress": "Physical Progress",
     "budget": "Total Budget",
+    "col_category": "Category",
+    "col_status": "Status",
     "spent": "Spent",
     "hide_detail": "Hide Details",
     "show_detail": "Project Details",

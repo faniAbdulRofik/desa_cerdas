@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Landmark, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
-import { dummyProjects } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -46,7 +45,7 @@ export default function AdminTransparansiPage() {
     paused: t('status_paused') 
   };
 
-  const [projects, setProjects] = useState<Project[]>(dummyProjects as any[]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -56,7 +55,7 @@ export default function AdminTransparansiPage() {
 
   async function load() {
     setLoading(true);
-    setProjects(await fetchJson('/api/projects', dummyProjects as any[]));
+    setProjects(await fetchJson('/api/projects', []));
     setLoading(false);
   }
 
@@ -71,7 +70,13 @@ export default function AdminTransparansiPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editId ? { id: editId, ...payload } : payload),
     });
-    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...payload };
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Gagal menyimpan data.');
+      setSaving(false);
+      return;
+    }
+    const saved = await res.json();
     if (editId) {
       setProjects(prev => prev.map(p => p.id === editId ? { ...p, ...saved } as any : p));
     } else {
@@ -82,8 +87,9 @@ export default function AdminTransparansiPage() {
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
-    await fetch(`/api/projects?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
-    setProjects(prev => prev.filter(p => p.id !== id));
+    const res = await fetch(`/api/projects?id=${id}`, { method: 'DELETE' });
+    if (res.ok) setProjects(prev => prev.filter(p => p.id !== id));
+    else setError('Gagal menghapus data.');
   }
 
   function startEdit(p: Project) {

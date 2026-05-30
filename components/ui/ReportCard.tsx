@@ -5,7 +5,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin, Clock, ThumbsUp, MessageCircle, ArrowRight } from 'lucide-react';
-import type { Report } from '@/lib/dummy-data';
+import type { Report } from '@/lib/types';
 import { StatusBadge, CategoryBadge } from './Badge';
 import { formatRelativeTime } from '@/lib/utils';
 

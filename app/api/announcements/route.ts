@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyAnnouncements } from '@/lib/dummy-data';
 import { deleteRow, insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get('category');
-  const announcements = await listRows('announcements', dummyAnnouncements, {
+  const announcements = await listRows('announcements', [], {
     filters: { category },
     order: { column: 'date', ascending: false },
   });

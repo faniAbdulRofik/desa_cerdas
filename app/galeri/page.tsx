@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Camera, Image as ImageIcon, X, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { dummyGallery, GalleryItem } from '@/lib/dummy-data';
+import type { GalleryItem } from '@/lib/types';
 import Image from 'next/image';
 import { fetchJson } from '@/lib/api-client';
 
@@ -14,11 +14,11 @@ export default function GaleriPage() {
   
   const [filter, setFilter] = useState(t('btn_all'));
   const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
-  const [gallery, setGallery] = useState<GalleryItem[]>(dummyGallery);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/gallery', dummyGallery).then((data) => {
+    fetchJson('/api/gallery', []).then((data) => {
       if (mounted) setGallery(data);
     });
     return () => { mounted = false; };
@@ -27,7 +27,7 @@ export default function GaleriPage() {
   const filtered = gallery.filter(g => filter === t('btn_all') || g.category === filter);
 
   return (
-    <div className="min-h-screen bg-bg pt-24 pb-20 px-4">
+    <div className="min-h-screen bg-bg pt-12 lg:pt-14 pb-12 lg:pb-14 px-4">
       <div className="max-w-6xl mx-auto">
         
         {/* Header */}

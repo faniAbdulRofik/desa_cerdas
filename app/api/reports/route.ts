@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyReports } from '@/lib/dummy-data';
 import { insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
@@ -8,7 +7,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const limit = searchParams.get('limit');
 
-  const reports = await listRows('reports', dummyReports, {
+  const reports = await listRows('reports', [], {
     filters: { status, category },
     order: { column: 'created_at', ascending: false },
     limit: limit ? Number(limit) : undefined,

@@ -3,7 +3,6 @@
  * GET: List government projects. POST: Create a project (admin).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyProjects } from '@/lib/dummy-data';
 import { deleteRow, insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +10,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const status = searchParams.get('status');
 
-  const projects = await listRows('projects', dummyProjects, {
+  const projects = await listRows('projects', [], {
     filters: { category, status },
     order: { column: 'created_at', ascending: false },
   });

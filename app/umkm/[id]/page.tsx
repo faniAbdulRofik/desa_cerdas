@@ -7,7 +7,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, ShoppingBag, Phone, ShoppingCart, Check, Loader2, Store } from 'lucide-react';
-import { dummyProducts } from '@/lib/dummy-data';
 import { useCart } from '@/components/marketplace/CartContext';
 import { formatRupiah } from '@/lib/utils';
 import { useParams } from 'next/navigation';
@@ -25,15 +24,10 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     async function load() {
-      const fallback = dummyProducts.find(p => p.id === productId) ?? null;
+      const fallback = null;
       const [prod, productReviews] = await Promise.all([
         fetchJson(`/api/products/${productId}`, fallback),
-        fetchJson(`/api/reviews?product_id=${productId}`, [
-          {
-            id: '1', rating: 5, comment: 'Produk sangat bagus dan sesuai deskripsi.', created_at: new Date().toISOString(),
-            orders: { buyer_name: 'Budi S.' }
-          }
-        ]),
+        fetchJson(`/api/reviews?product_id=${productId}`, []),
       ]);
       if (prod) setProduct(prod);
       setReviews(productReviews);
@@ -63,7 +57,7 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg pt-20">
+      <div className="min-h-[calc(100dvh-5rem)] flex items-center justify-center bg-bg">
         <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
       </div>
     );
@@ -71,7 +65,7 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-bg pt-28 pb-16 px-4">
+      <div className="min-h-[calc(100dvh-5rem)] bg-bg pt-12 lg:pt-14 pb-14 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <Store className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-gray-700 mb-2">Produk Tidak Ditemukan</h1>
@@ -92,7 +86,7 @@ export default function ProductDetailPage() {
   const waText = encodeURIComponent(`Halo ${product.seller_name}, saya tertarik dengan produk "${product.name}" di DesaMind. Apakah masih tersedia?`);
 
   return (
-    <div className="min-h-screen bg-bg pt-24 pb-16 px-4">
+    <div className="min-h-[calc(100dvh-5rem)] bg-bg pt-10 lg:pt-12 pb-14 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Back */}
         <Link href="/umkm" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-primary-700 mb-6 transition-colors">
@@ -187,7 +181,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Reviews Section */}
-        <div className="mt-12">
+        <div className="mt-8 lg:mt-10">
           <h2 className="text-lg font-bold text-primary-900 mb-4 flex items-center gap-2">
             <Star className="w-5 h-5 text-accent-500" />
             Ulasan Pembeli ({reviews.length})

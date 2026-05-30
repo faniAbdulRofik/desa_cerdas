@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyJobs } from '@/lib/dummy-data';
 import { deleteRow, getRowById, jsonError, updateRow } from '@/lib/api-helpers';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const fallback = dummyJobs.find((job) => job.id === id) ?? null;
-  const job = await getRowById('jobs', id, fallback);
+  const job = await getRowById('jobs', id);
 
   if (!job) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(job);

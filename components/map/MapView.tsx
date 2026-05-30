@@ -19,7 +19,6 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { dummyReports } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 import { fetchSettings } from '@/lib/geofence';
 import {
@@ -190,10 +189,7 @@ type MapReport = {
 
 // ─── Main Component ───────────────────────────────────────────
 export default function MapView() {
-  // Always use dummy reports — no Supabase/API fetch needed
-  const [reports, setReports] = useState<MapReport[]>(
-    dummyReports.map(r => ({ ...r, lat: r.lat!, lng: r.lng! }))
-  );
+  const [reports, setReports] = useState<MapReport[]>([]);
   const [layer, setLayer] = useState<LayerKey>('street');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [mapCenter, setMapCenter] = useState<[number, number]>(DEFAULT_CENTER);
@@ -207,7 +203,7 @@ export default function MapView() {
 
   useEffect(() => {
     let mounted = true;
-    fetchJson<MapReport[]>('/api/reports', dummyReports).then((data) => {
+    fetchJson<MapReport[]>('/api/reports', []).then((data) => {
       if (!mounted) return;
       setReports(
         data

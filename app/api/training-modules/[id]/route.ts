@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyModules } from '@/lib/dummy-data';
 import { deleteRow, getRowById, jsonError, updateRow } from '@/lib/api-helpers';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const fallback = dummyModules.find((trainingModule) => trainingModule.id === id) ?? null;
-  const trainingModule = await getRowById('training_modules', id, fallback);
+  const trainingModule = await getRowById('training_modules', id);
 
   if (!trainingModule) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(trainingModule);

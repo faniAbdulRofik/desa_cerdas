@@ -4,7 +4,6 @@
  * PATCH: Update order status / AWB number.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyOrders } from '@/lib/dummy-data';
 import { jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
@@ -12,7 +11,7 @@ export async function GET(request: NextRequest) {
   const buyer_id = searchParams.get('buyer_id');
   const store_id = searchParams.get('store_id');
 
-  const orders = await listRows('orders', dummyOrders, {
+  const orders = await listRows('orders', [], {
     filters: { buyer_id, store_id },
     order: { column: 'created_at', ascending: false },
     select: '*, order_items(*, products(*))',
