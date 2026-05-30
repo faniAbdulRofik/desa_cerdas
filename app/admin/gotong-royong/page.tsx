@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
-import { dummyActions } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -20,7 +19,7 @@ export default function AdminGotongRoyongPage() {
   const t = useTranslations('admin_gotong_royong');
   const STATUS_LABEL: Record<string, string> = { open: t('status_open'), full: t('status_full'), done: t('status_done') };
   
-  const [actions, setActions] = useState<Action[]>(dummyActions as any[]);
+  const [actions, setActions] = useState<Action[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -30,7 +29,7 @@ export default function AdminGotongRoyongPage() {
 
   async function load() {
     setLoading(true);
-    setActions(await fetchJson('/api/actions', dummyActions as any[]));
+    setActions(await fetchJson('/api/actions', []));
     setLoading(false);
   }
 
@@ -45,7 +44,13 @@ export default function AdminGotongRoyongPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editId ? { id: editId, ...payload } : payload),
     });
-    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...payload };
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Gagal menyimpan data.');
+      setSaving(false);
+      return;
+    }
+    const saved = await res.json();
     if (editId) {
       setActions(prev => prev.map(a => a.id === editId ? { ...a, ...saved } as any : a));
     } else {
@@ -56,17 +61,19 @@ export default function AdminGotongRoyongPage() {
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
-    await fetch(`/api/actions?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
-    setActions(prev => prev.filter(a => a.id !== id));
+    const res = await fetch(`/api/actions?id=${id}`, { method: 'DELETE' });
+    if (res.ok) setActions(prev => prev.filter(a => a.id !== id));
+    else setError('Gagal menghapus data.');
   }
 
   async function changeStatus(id: string, status: string) {
-    await fetch('/api/actions', {
+    const res = await fetch('/api/actions', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status }),
-    }).catch(() => undefined);
-    setActions(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    });
+    if (res.ok) setActions(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    else setError('Gagal memperbarui status.');
   }
 
   function startEdit(a: Action) {

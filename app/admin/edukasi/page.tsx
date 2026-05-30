@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { GraduationCap, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Eye, EyeOff } from 'lucide-react';
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
-import { dummyModules } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -18,7 +17,7 @@ const EMPTY = { title: '', description: '', category: 'Bisnis & Marketing', leve
 export default function AdminEdukasiPage() {
   const t = useTranslations('admin_edukasi');
   
-  const [modules, setModules] = useState<Module[]>(dummyModules as any[]);
+  const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -28,7 +27,7 @@ export default function AdminEdukasiPage() {
 
   async function load() {
     setLoading(true);
-    setModules(await fetchJson('/api/training-modules', dummyModules as any[]));
+    setModules(await fetchJson('/api/training-modules', []));
     setLoading(false);
   }
 
@@ -43,7 +42,13 @@ export default function AdminEdukasiPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editId ? { id: editId, ...payload } : payload),
     });
-    const saved = res.ok ? await res.json() : { id: Math.random().toString(), created_at: new Date().toISOString(), ...payload };
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Gagal menyimpan data.');
+      setSaving(false);
+      return;
+    }
+    const saved = await res.json();
     if (editId) {
       setModules(prev => prev.map(m => m.id === editId ? { ...m, ...saved } as any : m));
     } else {
@@ -54,17 +59,19 @@ export default function AdminEdukasiPage() {
 
   async function del(id: string) {
     if (!confirm(t('confirm_delete'))) return;
-    await fetch(`/api/training-modules?id=${id}`, { method: 'DELETE' }).catch(() => undefined);
-    setModules(prev => prev.filter(m => m.id !== id));
+    const res = await fetch(`/api/training-modules?id=${id}`, { method: 'DELETE' });
+    if (res.ok) setModules(prev => prev.filter(m => m.id !== id));
+    else setError('Gagal menghapus data.');
   }
 
   async function togglePublish(id: string, current: boolean) {
-    await fetch('/api/training-modules', {
+    const res = await fetch('/api/training-modules', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, is_published: !current }),
-    }).catch(() => undefined);
-    setModules(prev => prev.map(m => m.id === id ? { ...m, is_published: !current } : m));
+    });
+    if (res.ok) setModules(prev => prev.map(m => m.id === id ? { ...m, is_published: !current } : m));
+    else setError('Gagal memperbarui status.');
   }
 
 

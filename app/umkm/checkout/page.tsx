@@ -158,7 +158,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg pt-24 pb-20 px-4">
+    <div className="min-h-screen bg-bg pt-12 lg:pt-14 pb-12 lg:pb-14 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col gap-2 mb-8">
            <Link href="/umkm" className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-primary-700 transition-colors">

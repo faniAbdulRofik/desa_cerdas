@@ -3,7 +3,6 @@
  * GET: List local job postings. POST: Create a job posting.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyJobs } from '@/lib/dummy-data';
 import { deleteRow, insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +10,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category');
   const is_active = searchParams.get('is_active');
 
-  const jobs = await listRows('jobs', dummyJobs, {
+  const jobs = await listRows('jobs', [], {
     filters: { category, is_active: is_active === null ? undefined : is_active === 'true' },
     order: { column: 'created_at', ascending: false },
   });

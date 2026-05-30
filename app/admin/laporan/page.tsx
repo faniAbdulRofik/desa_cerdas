@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FileText, ChevronDown, Loader2 } from 'lucide-react';
-import { dummyReports } from '@/lib/dummy-data';
 import { StatusBadge, CategoryBadge } from '@/components/ui/Badge';
 import { formatRelativeTime } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -13,14 +12,14 @@ const STATUS_OPTIONS = ['pending', 'in_progress', 'completed'] as const;
 
 export default function AdminLaporanPage() {
   const t = useTranslations('admin_laporan');
-  const [reports, setReports] = useState<any[]>(dummyReports);
+  const [reports, setReports] = useState<any[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetchJson('/api/reports', dummyReports).then((data) => {
+    fetchJson('/api/reports', []).then((data) => {
       if (!mounted) return;
       setReports(data);
       setLoading(false);

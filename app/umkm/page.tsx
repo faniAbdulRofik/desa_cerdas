@@ -6,7 +6,6 @@ import { ProductCard } from '@/components/ui/ProductCard';
 import CartDrawer from '@/components/marketplace/CartDrawer';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { dummyProducts } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -15,14 +14,14 @@ export default function UMKMPage() {
   const router = useRouter();
   const CATEGORIES = [t('cat_all'), t('cat_food'), t('cat_crafts'), t('cat_agri'), t('cat_fashion'), t('cat_services')];
 
-  const [products, setProducts] = useState<any[]>(dummyProducts);
+  const [products, setProducts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Semua');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/products', dummyProducts).then((data) => {
+    fetchJson('/api/products', []).then((data) => {
       if (mounted) setProducts(data);
     });
     return () => { mounted = false; };
@@ -40,10 +39,10 @@ export default function UMKMPage() {
   return (
     <div>
       {/* ── Minimalist Elegant Banner ── */}
-      <div className="relative bg-bg pt-32 pb-20 overflow-hidden">
+      <div className="relative bg-bg pt-12 lg:pt-16 pb-12 lg:pb-14 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-60" />
 
-        <div className="relative max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8 items-center">
+        <div className="relative max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* Left Text */}
           <div className="lg:col-span-5 flex flex-col justify-center text-center lg:text-left order-2 lg:order-1 relative z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 border border-primary-100 mb-6 mx-auto lg:mx-0 w-max">
@@ -152,7 +151,7 @@ export default function UMKMPage() {
         </div>
 
         {/* CTA for sellers */}
-        <div className="mt-20 border-t border-gray-200 pt-16 flex flex-col items-center">
+        <div className="mt-12 lg:mt-14 border-t border-gray-200 pt-10 lg:pt-12 flex flex-col items-center">
           <h3 className="font-bold text-2xl text-primary-950 tracking-tight mb-4">{t('cta_title')}</h3>
           <p className="text-gray-500 text-xs max-w-md text-center leading-relaxed mb-8">{t('cta_desc')}</p>
           <a href="/umkm/daftar" className="bg-primary-800 hover:bg-primary-950 text-white text-[10px] font-bold uppercase tracking-widest px-8 py-3 transition-colors">

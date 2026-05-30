@@ -25,7 +25,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-28 pb-16 px-4">
+      <div className="min-h-screen bg-gray-50 pt-14 lg:pt-16 pb-16 px-4">
         <div className="max-w-md mx-auto text-center bg-white border border-gray-200 p-10 mt-10 shadow-sm">
           <Store className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-primary-900 mb-3">Login Diperlukan</h1>

@@ -3,26 +3,34 @@ import { useEffect, useState } from 'react';
 import { FileBarChart, PieChart, Activity, CheckCircle, Clock, Calendar, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { dummyAPBDesa } from '@/lib/dummy-data';
 import { formatRupiah } from '@/lib/utils';
 import { fetchJson } from '@/lib/api-client';
+import type { APBDesa } from '@/lib/types';
+
+const EMPTY_APB_DESA: APBDesa = {
+  year: new Date().getFullYear(),
+  total_budget: 0,
+  realized: 0,
+  allocations: [],
+  programs: [],
+};
 
 export default function APBDesaPage() {
   const t = useTranslations('public_pages');
   const tAuth = useTranslations('auth');
   const tTrans = useTranslations('transparansi');
   
-  const [apbdesa, setApbdesa] = useState(dummyAPBDesa);
+  const [apbdesa, setApbdesa] = useState<APBDesa>(EMPTY_APB_DESA);
   const { year, total_budget, realized, allocations, programs } = apbdesa;
-  const progressPercent = Math.round((realized / total_budget) * 100);
+  const progressPercent = total_budget > 0 ? Math.round((realized / total_budget) * 100) : 0;
 
   const [calcInput, setCalcInput] = useState('');
   const [calcBudget, setCalcBudget] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/apbdesa', dummyAPBDesa).then((data) => {
-      if (mounted) setApbdesa(data);
+    fetchJson<APBDesa | null>('/api/apbdesa', null).then((data) => {
+      if (mounted && data) setApbdesa(data);
     });
     return () => { mounted = false; };
   }, []);
@@ -34,7 +42,7 @@ export default function APBDesaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg pt-24 pb-20 px-4">
+    <div className="min-h-screen bg-bg pt-12 lg:pt-14 pb-12 lg:pb-14 px-4">
       <div className="max-w-5xl mx-auto space-y-8">
         
         {/* Header */}

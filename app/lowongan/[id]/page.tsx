@@ -4,17 +4,17 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Briefcase, MapPin, Clock, Phone, Building } from 'lucide-react';
-import { dummyJobs, type Job } from '@/lib/dummy-data';
+import type { Job } from '@/lib/types';
 import { fetchJson } from '@/lib/api-client';
 
 export default function LowonganDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [job, setJob] = useState<Job | null>(dummyJobs.find((j) => j.id === id) ?? null);
+  const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    fetchJson<Job | null>(`/api/jobs/${id}`, dummyJobs.find((j) => j.id === id) ?? null).then((data) => {
+    fetchJson<Job | null>(`/api/jobs/${id}`, null).then((data) => {
       if (!mounted) return;
       setJob(data);
       setLoading(false);

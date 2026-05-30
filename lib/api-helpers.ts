@@ -20,11 +20,11 @@ export function cleanPayload<T extends Record<string, unknown>>(payload: T) {
 
 export async function listRows<T>(
   table: string,
-  fallback: T[],
+  _fallback: T[] = [],
   options: QueryOptions = {}
 ) {
   const supabase = getSupabaseServerClient();
-  if (!supabase) return applyFallbackOptions(fallback, options);
+  if (!supabase) return [] as T[];
 
   let query = supabase.from(table).select(options.select ?? '*');
 
@@ -45,43 +45,20 @@ export async function listRows<T>(
   const { data, error } = await query;
   if (error) {
     console.error(`[API] Failed to list ${table}:`, error);
-    return applyFallbackOptions(fallback, options);
+    return [] as T[];
   }
 
   return (data ?? []) as T[];
 }
 
-function applyFallbackOptions<T>(rows: T[], options: QueryOptions) {
-  let result = [...rows];
-
-  for (const [key, value] of Object.entries(options.filters ?? {})) {
-    if (value !== undefined && value !== null && value !== '') {
-      result = result.filter((row) => (row as Record<string, unknown>)[key] === value);
-    }
-  }
-
-  if (options.order) {
-    const { column, ascending = true } = options.order;
-    result.sort((a, b) => {
-      const aValue = (a as Record<string, unknown>)[column];
-      const bValue = (b as Record<string, unknown>)[column];
-      if (aValue === bValue) return 0;
-      return (aValue ?? '') > (bValue ?? '') === ascending ? 1 : -1;
-    });
-  }
-
-  if (options.limit) result = result.slice(0, options.limit);
-  return result;
-}
-
 export async function getRowById<T>(
   table: string,
   id: string,
-  fallback: T | null,
+  _fallback: T | null = null,
   select = '*'
 ) {
   const supabase = getSupabaseServerClient();
-  if (!supabase) return fallback;
+  if (!supabase) return null;
 
   const { data, error } = await supabase
     .from(table)
@@ -91,10 +68,10 @@ export async function getRowById<T>(
 
   if (error) {
     console.error(`[API] Failed to get ${table}/${id}:`, error);
-    return fallback;
+    return null;
   }
 
-  return (data as T | null) ?? fallback;
+  return (data as T | null) ?? null;
 }
 
 export async function countRows(
@@ -123,10 +100,10 @@ export async function countRows(
 export async function insertRow<T>(
   table: string,
   payload: Record<string, unknown>,
-  fallback: T
+  _fallback?: T
 ) {
   const supabase = getSupabaseServerClient();
-  if (!supabase) return { data: fallback, error: null };
+  if (!supabase) return { data: null, error: new Error('Database is not configured') };
 
   const { data, error } = await supabase
     .from(table)
@@ -141,10 +118,10 @@ export async function updateRow<T>(
   table: string,
   id: string,
   payload: Record<string, unknown>,
-  fallback: T
+  _fallback?: T
 ) {
   const supabase = getSupabaseServerClient();
-  if (!supabase) return { data: fallback, error: null };
+  if (!supabase) return { data: null, error: new Error('Database is not configured') };
 
   const { data, error } = await supabase
     .from(table)
@@ -158,7 +135,7 @@ export async function updateRow<T>(
 
 export async function deleteRow(table: string, id: string) {
   const supabase = getSupabaseServerClient();
-  if (!supabase) return { error: null };
+  if (!supabase) return { error: new Error('Database is not configured') };
 
   const { error } = await supabase.from(table).delete().eq('id', id);
   return { error };

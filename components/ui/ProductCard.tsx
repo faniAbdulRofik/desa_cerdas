@@ -7,7 +7,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Phone, Star, ShoppingBag, TrendingUp, Award, ShoppingCart, Check } from 'lucide-react';
-import type { Product } from '@/lib/dummy-data';
+import type { Product } from '@/lib/types';
 import { useCart } from '@/components/marketplace/CartContext';
 import { useState } from 'react';
 
@@ -28,9 +28,9 @@ export function ProductCard({ product }: { product: Product }) {
     addItem({
       id: product.id,
       name: product.name,
-      description: product.description,
+      description: product.description ?? '',
       price: product.price,
-      image_url: product.image_url,
+      image_url: product.image_url ?? '',
       seller_name: product.seller_name,
       category: product.category,
       phone_number: product.phone_number || '',
@@ -49,7 +49,7 @@ export function ProductCard({ product }: { product: Product }) {
         {/* Image */}
         <div className="relative h-48 overflow-hidden">
           <Image
-            src={product.image_url}
+            src={product.image_url || '/file.svg'}
             alt={product.name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-500"

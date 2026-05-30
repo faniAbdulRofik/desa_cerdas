@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Users, Calendar, MapPin, ChevronRight, UserPlus, Clock, CheckCircle2, Search } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { dummyActions } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 
@@ -60,13 +59,13 @@ export default function GotongRoyongPage() {
   const locale = useLocale();
   const CATEGORIES = [t('cat_all'), t('cat_env'), t('cat_infra'), t('cat_social'), t('cat_edu'), t('cat_health')];
   
-  const [actions, setActions] = useState<Action[]>(dummyActions as any[]);
+  const [actions, setActions] = useState<Action[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(t('cat_all'));
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/actions', dummyActions as any[]).then((data) => {
+    fetchJson('/api/actions', []).then((data) => {
       if (mounted) setActions(data);
     });
     return () => { mounted = false; };
@@ -92,8 +91,8 @@ export default function GotongRoyongPage() {
 
   return (
     <div>
-      <div className="bg-primary-900 pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center text-white">
+      <div className="bg-primary-900 pt-12 lg:pt-14 pb-16">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center text-white">
           <div className="flex flex-col justify-center max-w-md">
             <h1 className="text-4xl md:text-[42px] font-semibold leading-tight mb-4">
               {t('title_1')}<br />{t('title_2')}
@@ -117,7 +116,7 @@ export default function GotongRoyongPage() {
           ))}
         </div>
         {/* Filters and search area matching minimalist layout */}
-        <div className="mb-12 border-b border-gray-200 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="mb-8 lg:mb-10 border-b border-gray-200 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex gap-2 overflow-x-auto scrollbar-none">
             {CATEGORIES.map(c => (
               <button key={c} onClick={() => setCategory(c)} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${category === c ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{c}</button>

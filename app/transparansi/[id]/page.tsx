@@ -4,7 +4,6 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Building2, Calendar, FileText } from 'lucide-react';
-import { dummyProjects } from '@/lib/dummy-data';
 import { fetchJson } from '@/lib/api-client';
 
 function formatRupiah(n: number) {
@@ -13,12 +12,12 @@ function formatRupiah(n: number) {
 
 export default function TransparansiDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [project, setProject] = useState<any>(dummyProjects.find((p) => p.id === id) ?? null);
+  const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    fetchJson(`/api/projects/${id}`, dummyProjects.find((p) => p.id === id) ?? null).then((data) => {
+    fetchJson(`/api/projects/${id}`, null).then((data) => {
       if (!mounted) return;
       setProject(data);
       setLoading(false);

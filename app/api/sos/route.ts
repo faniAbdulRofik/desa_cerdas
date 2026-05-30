@@ -4,11 +4,10 @@
  * Persists to Supabase and falls back to mock response.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { dummyAlerts } from '@/lib/dummy-data';
 import { insertRow, jsonError, listRows } from '@/lib/api-helpers';
 
 export async function GET() {
-  const alerts = await listRows('emergency_alerts', dummyAlerts, {
+  const alerts = await listRows('emergency_alerts', [], {
     order: { column: 'created_at', ascending: false },
   });
 

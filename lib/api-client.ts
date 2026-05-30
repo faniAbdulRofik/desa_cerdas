@@ -8,6 +8,10 @@ export async function fetchJson<T>(url: string, fallback: T): Promise<T> {
   }
 }
 
+export async function fetchJsonArray<T>(url: string): Promise<T[]> {
+  return fetchJson<T[]>(url, []);
+}
+
 export async function sendJson<T>(
   url: string,
   init: RequestInit,
