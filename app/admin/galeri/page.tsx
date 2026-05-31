@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Camera, Plus, RefreshCw, Pencil, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { fetchJson } from '@/lib/api-client';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import type { GalleryItem } from '@/lib/types';
 
 const EMPTY_FORM = { title: '', category: 'Lainnya', date: '', image_url: '' };
@@ -89,7 +90,9 @@ export default function AdminGaleriPage() {
             <Input label="Nama Kegiatan" value={form.title} onChange={(value) => setForm((prev) => ({ ...prev, title: value }))} />
             <Input label="Kategori" value={form.category} onChange={(value) => setForm((prev) => ({ ...prev, category: value }))} />
             <Input label="Tanggal" type="date" value={form.date} onChange={(value) => setForm((prev) => ({ ...prev, date: value }))} />
-            <Input label="URL Gambar" value={form.image_url} onChange={(value) => setForm((prev) => ({ ...prev, image_url: value }))} />
+            <div className="sm:col-span-2">
+              <ImageUpload label="Foto Kegiatan" folder="gallery" value={form.image_url} onChange={(url) => setForm((prev) => ({ ...prev, image_url: url }))} />
+            </div>
           </div>
           <div className="flex gap-3 mt-8">
             <button onClick={save} disabled={saving} className="flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 disabled:opacity-60">

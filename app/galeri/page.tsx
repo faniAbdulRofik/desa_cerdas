@@ -10,9 +10,16 @@ import { fetchJson } from '@/lib/api-client';
 export default function GaleriPage() {
   const t = useTranslations('public_pages');
   const tAuth = useTranslations('auth');
-  const CATEGORIES = [t('btn_all'), 'PKK', 'Karang Taruna', 'Posyandu', 'Kerja Bakti', 'Lainnya'];
+  const CATEGORY_DEFS = [
+    { key: 'all', label: t('btn_all') },
+    { key: 'PKK', label: 'PKK' },
+    { key: 'Karang Taruna', label: 'Karang Taruna' },
+    { key: 'Posyandu', label: 'Posyandu' },
+    { key: 'Kerja Bakti', label: 'Kerja Bakti' },
+    { key: 'Lainnya', label: 'Lainnya' },
+  ];
   
-  const [filter, setFilter] = useState(t('btn_all'));
+  const [filter, setFilter] = useState('all');
   const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
 
@@ -24,7 +31,7 @@ export default function GaleriPage() {
     return () => { mounted = false; };
   }, []);
 
-  const filtered = gallery.filter(g => filter === t('btn_all') || g.category === filter);
+  const filtered = gallery.filter(g => filter === 'all' || g.category === filter);
 
   return (
     <div className="min-h-screen bg-bg pt-12 lg:pt-14 pb-12 lg:pb-14 px-4">
@@ -48,17 +55,17 @@ export default function GaleriPage() {
 
         {/* Filter */}
         <div className="flex flex-wrap gap-2 mb-8 items-center justify-center md:justify-start">
-          {CATEGORIES.map(cat => (
+          {CATEGORY_DEFS.map(cat => (
             <button
-              key={cat}
-              onClick={() => setFilter(cat)}
+              key={cat.key}
+              onClick={() => setFilter(cat.key)}
               className={`px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest border transition-colors ${
-                filter === cat 
+                filter === cat.key 
                   ? 'bg-primary-900 border-primary-900 text-white' 
                   : 'bg-white border-gray-200 text-gray-500 hover:border-primary-400 hover:text-primary-800'
               }`}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
         </div>

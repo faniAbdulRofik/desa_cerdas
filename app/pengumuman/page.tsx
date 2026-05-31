@@ -18,8 +18,14 @@ function getCategoryIcon(category: string) {
 export default function PengumumanPage() {
   const t = useTranslations('public_pages');
   const tAuth = useTranslations('auth');
-  const CATEGORIES = [t('btn_all'), 'Pemerintahan', 'Kesehatan', 'Sosial', 'Umum'];
-  const [filter, setFilter] = useState(t('btn_all'));
+  const CATEGORY_DEFS = [
+    { key: 'all', label: t('btn_all') },
+    { key: 'Pemerintahan', label: 'Pemerintahan' },
+    { key: 'Kesehatan', label: 'Kesehatan' },
+    { key: 'Sosial', label: 'Sosial' },
+    { key: 'Umum', label: 'Umum' },
+  ];
+  const [filter, setFilter] = useState('all');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   useEffect(() => {
@@ -30,7 +36,7 @@ export default function PengumumanPage() {
     return () => { mounted = false; };
   }, []);
 
-  const filtered = announcements.filter(a => filter === t('btn_all') || a.category === filter);
+  const filtered = announcements.filter(a => filter === 'all' || a.category === filter);
 
   return (
     <div className="min-h-screen bg-bg pt-12 lg:pt-14 pb-12 lg:pb-14 px-4">
@@ -54,17 +60,17 @@ export default function PengumumanPage() {
 
         {/* Filter */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {CATEGORIES.map(cat => (
+          {CATEGORY_DEFS.map(cat => (
             <button
-              key={cat}
-              onClick={() => setFilter(cat)}
+              key={cat.key}
+              onClick={() => setFilter(cat.key)}
               className={`px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest border transition-colors ${
-                filter === cat 
+                filter === cat.key 
                   ? 'bg-primary-900 border-primary-900 text-white' 
                   : 'bg-white border-gray-200 text-gray-500 hover:border-primary-400 hover:text-primary-800'
               }`}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
         </div>

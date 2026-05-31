@@ -4,6 +4,7 @@ import { BookOpen, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, Eye, E
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
 import { fetchJson } from '@/lib/api-client';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 
 type Article = {
@@ -120,8 +121,7 @@ export default function AdminKomunitasPage() {
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-2">{t('lbl_image')}</label>
-              <input type="text" value={form.image_url} onChange={e => setForm(p => ({ ...p, image_url: e.target.value }))} placeholder="https://..." className="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-primary-800 bg-gray-50 transition-colors" />
+              <ImageUpload label={t('lbl_image')} folder="articles" value={form.image_url} onChange={(url) => setForm(p => ({ ...p, image_url: url }))} />
             </div>
             <div className="sm:col-span-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-2">{t('lbl_excerpt')}</label>

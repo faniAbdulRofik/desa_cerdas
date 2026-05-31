@@ -12,11 +12,19 @@ import { fetchJson } from '@/lib/api-client';
 export default function UMKMPage() {
   const t = useTranslations('umkm');
   const router = useRouter();
-  const CATEGORIES = [t('cat_all'), t('cat_food'), t('cat_crafts'), t('cat_agri'), t('cat_fashion'), t('cat_services')];
+  // Use stable keys (DB values / 'all') so changing language never invalidates the filter.
+  const CATEGORY_DEFS = [
+    { key: 'all', label: t('cat_all') },
+    { key: 'Makanan', label: t('cat_food') },
+    { key: 'Kerajinan', label: t('cat_crafts') },
+    { key: 'Pertanian', label: t('cat_agri') },
+    { key: 'Fashion', label: t('cat_fashion') },
+    { key: 'Jasa', label: t('cat_services') },
+  ];
 
   const [products, setProducts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('Semua');
+  const [category, setCategory] = useState('all');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
@@ -32,7 +40,7 @@ export default function UMKMPage() {
     const matchSearch =
       p.name?.toLowerCase().includes(search.toLowerCase()) ||
       p.seller_name?.toLowerCase().includes(search.toLowerCase());
-    const matchCat = category === t('cat_all') || p.category === category;
+    const matchCat = category === 'all' || p.category === category;
     return matchSearch && matchCat;
   });
 
@@ -120,15 +128,15 @@ export default function UMKMPage() {
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-6">Filter Kategori</p>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-gray-200 pb-6">
             <div className="flex gap-2 w-full overflow-x-auto scrollbar-none pb-2 sm:pb-0">
-              {CATEGORIES.map((c) => (
+              {CATEGORY_DEFS.map((c) => (
                 <button
-                  key={c}
-                  onClick={() => setCategory(c)}
+                  key={c.key}
+                  onClick={() => setCategory(c.key)}
                   className={`shrink-0 whitespace-nowrap px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                    category === c ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    category === c.key ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                   }`}
                 >
-                  {c}
+                  {c.label}
                 </button>
               ))}
             </div>

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2, Upload } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
     category: 'Makanan',
     phone_number: '',
     seller_name: '',
-    image_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=400&q=80', // Default placeholder
+    image_url: '',
   });
 
   const [error, setError] = useState('');
@@ -149,17 +150,10 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
             />
           </div>
 
-          {/* Simple Image URL field for now, ImageKit comes in Phase 2 */}
+          {/* Image upload via Supabase Storage */}
           <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Image URL</label>
-            <div className="flex gap-2">
-              <input
-                type="url"
-                className="w-full flex-1 border border-gray-300 p-2 text-sm focus:outline-none focus:border-primary-500 bg-gray-50 text-gray-500"
-                value={formData.image_url}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              />
-            </div>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Foto Produk</label>
+            <ImageUpload folder="products" value={formData.image_url} onChange={(url) => setFormData({ ...formData, image_url: url })} />
           </div>
 
           <div className="pt-4 flex gap-3">

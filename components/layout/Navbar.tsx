@@ -170,7 +170,7 @@ function ProfileButton() {
           {/* Logout */}
           <div className="border-t border-gray-100 py-1">
             <button
-              onClick={() => { logout(); setOpen(false); router.refresh(); }}
+              onClick={async () => { await logout(); setOpen(false); router.push('/'); router.refresh(); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-[12px] text-red-600 hover:bg-red-50 transition-colors"
             >
               <LogOut className="w-4 h-4" />
@@ -298,9 +298,9 @@ export function Navbar() {
       >
         <div className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center shrink-0 w-[240px]">
+          <div className="flex items-center shrink-0 w-[260px]">
             <Link href="/" className="flex items-center">
-              <Image src="/logo.webp" alt="DesaMind Logo" width={180} height={48} className="h-10 sm:h-12 w-auto object-contain" priority />
+              <Image src="/logo.png" alt="DesaMind Logo" width={260} height={72} className="h-14 sm:h-16 w-auto object-contain" priority />
             </Link>
           </div>
 
@@ -355,7 +355,7 @@ export function Navbar() {
       {/* Mobile drawer */}
       <div className={cn('fixed inset-0 z-50 w-full bg-white lg:hidden flex flex-col transition-transform duration-300 ease-in-out', mobileOpen ? 'translate-x-0' : 'translate-x-full')}>
         <div className="flex items-center justify-between px-6 h-20 border-b border-gray-100">
-          <Image src="/logo.webp" alt="DesaMind" width={140} height={36} className="h-8 w-auto object-contain" />
+          <Image src="/logo.png" alt="DesaMind" width={180} height={48} className="h-11 w-auto object-contain" />
           <div className="flex items-center justify-end gap-4">
             <LanguageSwitcher />
             <button onClick={() => setMobileOpen(false)} className="text-gray-800 hover:text-red-600 transition-colors">
@@ -422,7 +422,7 @@ export function Navbar() {
           </div>
 
           <div className="mt-auto pt-10 flex flex-col gap-4">
-            <Image src="/logo.webp" alt="DesaMind" width={100} height={24} className="h-6 w-auto object-contain opacity-50 grayscale" />
+            <Image src="/logo.png" alt="DesaMind" width={100} height={24} className="h-6 w-auto object-contain opacity-50 grayscale" />
             <div className="flex items-center gap-5 text-gray-400">
               <Instagram className="w-5 h-5 hover:text-primary-600 transition-colors" strokeWidth={1.5} />
               <Linkedin className="w-5 h-5 hover:text-primary-600 transition-colors" strokeWidth={1.5} />

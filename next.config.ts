@@ -3,6 +3,8 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const nextConfig: NextConfig = {
+  // Produce a minimal, self-contained server bundle for Docker images.
+  output: 'standalone',
   turbopack: {
     root: process.cwd(),
   },

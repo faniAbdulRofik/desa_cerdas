@@ -99,27 +99,17 @@ export default function NewReportPage() {
     try {
       let image_url: string | null = null;
 
-      // Upload image to Supabase Storage if selected
+      // Upload image via the unified /api/upload endpoint (Supabase Storage)
       if (imageFile) {
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey =
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-          process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-        
-        if (supabaseUrl && supabaseKey) {
-          const sb = createClient(supabaseUrl, supabaseKey);
-          const fileName = `report-${Date.now()}-${imageFile.name.replace(/\s+/g, '_')}`;
-          const { error: uploadError } = await sb.storage
-            .from('report-images')
-            .upload(fileName, imageFile, { cacheControl: '3600', upsert: false });
-
-          if (!uploadError) {
-            const { data: urlData } = sb.storage.from('report-images').getPublicUrl(fileName);
-            image_url = urlData.publicUrl;
-          } else {
-            console.error('Image upload error:', uploadError);
-          }
+        const body = new FormData();
+        body.append('file', imageFile);
+        body.append('folder', 'reports');
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body });
+        if (uploadRes.ok) {
+          const data = await uploadRes.json();
+          image_url = data.url ?? null;
+        } else {
+          console.error('Image upload failed:', await uploadRes.json().catch(() => ({})));
         }
       }
 

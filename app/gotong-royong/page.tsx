@@ -12,7 +12,6 @@ type Action = {
   max_participants: number; current_participants: number; status: string;
 };
 
-const CATEGORIES = ['Semua', 'Lingkungan', 'Infrastruktur', 'Sosial', 'Pendidikan', 'Kesehatan'];
 const STATUS_STYLES: Record<string, { badge: string }> = {
   open: { badge: 'bg-green-50 text-green-700 border border-green-200' },
   full: { badge: 'bg-amber-50 text-amber-700 border border-amber-200' },
@@ -57,11 +56,18 @@ function ActionCard({ action, t, locale }: { action: Action; t: any; locale: str
 export default function GotongRoyongPage() {
   const t = useTranslations('gotong_royong');
   const locale = useLocale();
-  const CATEGORIES = [t('cat_all'), t('cat_env'), t('cat_infra'), t('cat_social'), t('cat_edu'), t('cat_health')];
-  
+  const CATEGORY_DEFS = [
+    { key: 'all', label: t('cat_all') },
+    { key: 'Lingkungan', label: t('cat_env') },
+    { key: 'Infrastruktur', label: t('cat_infra') },
+    { key: 'Sosial', label: t('cat_social') },
+    { key: 'Pendidikan', label: t('cat_edu') },
+    { key: 'Kesehatan', label: t('cat_health') },
+  ];
+
   const [actions, setActions] = useState<Action[]>([]);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState(t('cat_all'));
+  const [category, setCategory] = useState('all');
 
   useEffect(() => {
     let mounted = true;
@@ -74,12 +80,7 @@ export default function GotongRoyongPage() {
 
   const filtered = actions.filter(a => {
     const matchSearch = a.title.toLowerCase().includes(search.toLowerCase());
-    
-    const DB_CATS = ['Semua', 'Lingkungan', 'Infrastruktur', 'Sosial', 'Pendidikan', 'Kesehatan'];
-    const sIdx = CATEGORIES.indexOf(category);
-    const dbCat = DB_CATS[sIdx];
-    
-    const matchCat = sIdx === 0 || a.category === dbCat;
+    const matchCat = category === 'all' || a.category === category;
     return matchSearch && matchCat;
   });
 
@@ -118,8 +119,8 @@ export default function GotongRoyongPage() {
         {/* Filters and search area matching minimalist layout */}
         <div className="mb-8 lg:mb-10 border-b border-gray-200 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex gap-2 overflow-x-auto scrollbar-none">
-            {CATEGORIES.map(c => (
-              <button key={c} onClick={() => setCategory(c)} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${category === c ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{c}</button>
+            {CATEGORY_DEFS.map(c => (
+              <button key={c.key} onClick={() => setCategory(c.key)} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${category === c.key ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{c.label}</button>
             ))}
           </div>
           <div className="relative w-full md:w-64">

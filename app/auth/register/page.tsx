@@ -15,15 +15,31 @@ export default function RegisterPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    if (password.length < 8) {
+      setError('Password minimal 8 karakter.');
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      register(name, email);
-      setSuccess(true);
-      setTimeout(() => router.push('/'), 1200);
-    }, 800);
+    const result = await register(name, email, password);
+    if (!result.ok) {
+      setError(result.error ?? 'Gagal mendaftar.');
+      setLoading(false);
+      return;
+    }
+    if (result.pending) {
+      // Account created but needs admin approval before login.
+      setPending(true);
+      setLoading(false);
+      return;
+    }
+    setSuccess(true);
+    setTimeout(() => router.push('/'), 1200);
   };
 
   return (
@@ -63,7 +79,7 @@ export default function RegisterPage() {
         {/* Mobile Header (Hidden on Desktop) */}
         <div className="md:hidden flex flex-col mb-8 lg:mb-10">
           <Link href="/">
-            <Image src="/logo.webp" alt="DesaMind" width={140} height={40} className="h-9 w-auto object-contain mb-6" />
+            <Image src="/logo.png" alt="DesaMind" width={140} height={40} className="h-9 w-auto object-contain mb-6" />
           </Link>
           <h2 className="text-2xl font-bold text-gray-900">Bergabung Bersama Kami</h2>
           <p className="text-sm text-gray-500 mt-1">Buat akun untuk melapor, belanja, dan memantau desa.</p>
@@ -81,6 +97,15 @@ export default function RegisterPage() {
                 <CheckCircle className="w-5 h-5 shrink-0" />
                 Daftar berhasil! Mengalihkan...
               </div>
+            )}
+            {pending && (
+              <div className="flex items-start gap-2 p-4 bg-amber-50 text-amber-700 text-sm font-medium rounded-xl border border-amber-200 mb-4">
+                <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <span>Pendaftaran berhasil! Akun Anda menunggu persetujuan admin desa sebelum dapat masuk.</span>
+              </div>
+            )}
+            {error && (
+              <div className="p-4 bg-red-50 text-red-600 text-sm font-medium rounded-xl border border-red-100 mb-4">{error}</div>
             )}
 
             <div className="space-y-1.5">

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { insertRow, jsonError, listRows } from '@/lib/api-helpers';
+import { deleteRow, insertRow, jsonError, listRows } from '@/lib/api-helpers';
 
 
 export async function GET(request: NextRequest) {
@@ -34,4 +34,15 @@ export async function POST(req: Request) {
   if (error) return jsonError(error.message);
 
   return NextResponse.json(data, { status: 201 });
+}
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  if (!id) return jsonError('Missing store id', 400);
+
+  const { error } = await deleteRow('stores', id);
+  if (error) return jsonError(error.message);
+  return NextResponse.json({ deleted: true });
 }
