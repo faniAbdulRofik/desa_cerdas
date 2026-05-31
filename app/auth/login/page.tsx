@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/hooks/useAuth';
-import { DEMO_ACCOUNTS } from '@/lib/auth';
 import { Eye, EyeOff, Loader2, CheckCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
@@ -19,26 +18,18 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      const user = login(email, password);
-      if (!user) {
-        setError(t('error'));
-        setLoading(false);
-        return;
-      }
-      setSuccess(true);
-      setTimeout(() => router.push('/'), 1200);
-    }, 800);
-  };
-
-  const fillDemo = (acc: typeof DEMO_ACCOUNTS[0]) => {
-    setEmail(acc.email);
-    setPassword('demo1234');
-    setError('');
+    const result = await login(email, password);
+    if (!result.ok) {
+      setError(result.error ?? t('error'));
+      setLoading(false);
+      return;
+    }
+    setSuccess(true);
+    setTimeout(() => router.push(result.user?.role === 'admin' ? '/admin' : '/'), 900);
   };
 
   return (
@@ -78,7 +69,7 @@ export default function LoginPage() {
         {/* Mobile Header (Hidden on Desktop) */}
         <div className="md:hidden flex flex-col mb-8 lg:mb-10">
           <Link href="/">
-            <Image src="/logo.webp" alt="DesaMind" width={140} height={40} className="h-9 w-auto object-contain mb-6" />
+            <Image src="/logo.png" alt="DesaMind" width={140} height={40} className="h-9 w-auto object-contain mb-6" />
           </Link>
           <h2 className="text-2xl font-bold text-gray-900">{t('welcome')}</h2>
           <p className="text-sm text-gray-500 mt-1">{t('welcome_desc')}</p>
@@ -141,20 +132,14 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo accounts */}
+          {/* Info note */}
           <div className="mt-10 pt-8 border-t border-gray-100">
-            <p className="text-xs text-center font-medium text-gray-400 mb-4 uppercase tracking-wider">{t('demo_title')}</p>
-            <div className="grid grid-cols-2 gap-3">
-              {DEMO_ACCOUNTS.map(acc => (
-                <button
-                  key={acc.email}
-                  onClick={() => fillDemo(acc)}
-                  className="flex flex-col items-start px-4 py-3 border border-gray-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-colors group text-left"
-                >
-                  <span className="text-xs font-semibold text-gray-800 group-hover:text-primary-900">{acc.name}</span>
-                  <span className="text-[10px] text-gray-500 group-hover:text-primary-600 mt-0.5 capitalize">{acc.role}</span>
-                </button>
-              ))}
+            <div className="flex items-start gap-3 p-4 bg-primary-50/60 border border-primary-100 rounded-xl">
+              <CheckCircle className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-primary-800 leading-relaxed">
+                Masuk dengan email dan password yang Anda buat saat mendaftar.
+                Pendaftaran warga gratis dan akun langsung aktif.
+              </p>
             </div>
           </div>
 

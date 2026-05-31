@@ -1,33 +1,18 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, ArrowLeft, X, UploadCloud, Sparkles } from 'lucide-react';
-import { IKContext, IKUpload } from 'imagekitio-react';
+import { Loader2, ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { fetchJson } from '@/lib/api-client';
-
-const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/9vtqch760";
-const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "public_0mvXhk/vVsGASxItm3hSlvr5KoA=";
-
-const authenticator = async () => {
-  try {
-    const response = await fetch("/api/imagekit/auth");
-    if (!response.ok) throw new Error("Auth failed");
-    return await response.json();
-  } catch (error: any) {
-    throw new Error(`Authentication request failed: ${error.message}`);
-  }
-};
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 function ProductForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
-  
+
   const [saving, setSaving] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', category: 'Makanan', image_url: '', phone_number: '', stock: '10',
@@ -35,23 +20,52 @@ function ProductForm() {
 
   useEffect(() => {
     if (editId) {
-       fetchJson(`/api/products/${editId}`, null as any).then((product) => {
-         if (!product) return;
-         setFormData({
-           name: product.name ?? '',
-           description: product.description ?? '',
-           price: String(product.price ?? ''),
-           category: product.category ?? 'Makanan',
-           image_url: product.image_url ?? '',
-           phone_number: product.phone_number ?? '',
-           stock: String(product.stock ?? '10'),
-         });
-       });
+      fetchJson(`/api/products/${editId}`, null as any).then((product) => {
+        if (!product) return;
+        setFormData({
+          name: product.name ?? '',
+          description: product.description ?? '',
+          price: String(product.price ?? ''),
+          category: product.category ?? 'Makanan',
+          image_url: product.image_url ?? '',
+          phone_number: product.phone_number ?? '',
+          stock: String(product.stock ?? '10'),
+        });
+      });
     }
   }, [editId]);
 
+  /** After an image is uploaded, ask the AI to auto-fill product fields. */
+  async function runAIGeneration(imageUrl: string) {
+    setIsGeneratingAI(true);
+    try {
+      const aiRes = await fetch('/api/ai/generate-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl }),
+      });
+      if (aiRes.ok) {
+        const data = await aiRes.json();
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || data.name || '',
+          description: prev.description || data.description || '',
+          category: data.category || prev.category,
+        }));
+      }
+    } catch (error) {
+      console.error('AI Generation Error', error);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!formData.image_url) {
+      alert('Gambar produk wajib diunggah.');
+      return;
+    }
     setSaving(true);
     const payload = {
       ...formData,
@@ -81,99 +95,25 @@ function ProductForm() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
-          {/* IMAGE UPLOAD */}
+          {/* IMAGE UPLOAD (Supabase Storage) */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Gambar Produk *</label>
-            <IKContext publicKey={publicKey} urlEndpoint={urlEndpoint} authenticator={authenticator}>
-              <div className="flex flex-col gap-3">
-                {formData.image_url ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-green-100 bg-green-50/50 rounded-xl">
-                    <div className="relative w-24 h-24 shrink-0 bg-gray-100 rounded-xl overflow-hidden shadow-sm group/img border border-black/5 ring-2 ring-white">
-                      <Image src={formData.image_url} alt="Preview" fill className="object-cover" />
-                      <button 
-                        type="button" 
-                        onClick={() => setFormData({ ...formData, image_url: '' })}
-                        className="absolute top-1 right-1 bg-white/95 p-1 rounded-full shadow-md text-red-600 hover:bg-red-50 opacity-0 group-hover/img:opacity-100 transition-opacity"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-green-800 mb-1 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span> Gambar Terunggah
-                      </p>
-                      <p className="text-xs text-green-600 leading-relaxed">
-                        Gambar ini akan ditampilkan di katalog marketplace. Klik tombol silang pada gambar jika ingin mengganti dengan foto lain.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`relative border-2 border-dashed rounded-xl p-5 md:p-8 flex flex-col items-center justify-center transition-colors ${uploadingImage ? 'border-primary-400 bg-primary-50/50' : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50/50'}`}>
-                    {!uploadingImage && (
-                      <IKUpload
-                        fileName="product.jpg"
-                        tags={["product"]}
-                        useUniqueFileName={true}
-                        folder={"/desacerdas/products"}
-                        accept="image/*"
-                        validateFile={(file: File) => {
-                          if (file.size > 5000000) { alert("Ukuran gambar maksimal 5MB"); return false; }
-                          return true;
-                        }}
-                        onError={(err: any) => {
-                          console.error("Upload Error", err); setUploadingImage(false); alert("Gagal mengunggah gambar. Silakan coba lagi.");
-                        }}
-                        onSuccess={async (res: any) => {
-                          setFormData(prev => ({ ...prev, image_url: res.url }));
-                          setUploadingImage(false);
-                          
-                          // AI Generation
-                          setIsGeneratingAI(true);
-                          try {
-                            const aiRes = await fetch('/api/ai/generate-product', {
-                              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageUrl: res.url }),
-                            });
-                            if (aiRes.ok) {
-                              const data = await aiRes.json();
-                              setFormData(prev => ({
-                                ...prev,
-                                name: data.name || prev.name,
-                                description: data.description || prev.description,
-                                category: data.category || prev.category,
-                              }));
-                            }
-                          } catch (error) { console.error("AI Generation Error", error); } finally { setIsGeneratingAI(false); }
-                        }}
-                        onUploadStart={() => setUploadingImage(true)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      />
-                    )}
-                    {uploadingImage ? (
-                      <div className="flex flex-col items-center text-primary-600 py-2">
-                        <Loader2 className="w-8 h-8 animate-spin mb-3" />
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-primary-800">Mengunggah Gambar...</p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center text-gray-500 text-center">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                          <UploadCloud className="w-6 h-6 text-gray-400" />
-                        </div>
-                        <p className="text-[13px] font-bold text-gray-700 mb-1">Klik atau lepaskan gambar di sini</p>
-                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Maksimal 5MB (JPG/PNG)</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </IKContext>
-            {!formData.image_url && !uploadingImage && <p className="text-[9px] text-red-500 mt-1">Gambar produk wajib diunggah untuk marketplace.</p>}
+            <ImageUpload
+              folder="products"
+              value={formData.image_url}
+              onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
+              onUploaded={(url) => runAIGeneration(url)}
+            />
+            {!formData.image_url && (
+              <p className="text-[9px] text-red-500 mt-1">Gambar produk wajib diunggah untuk marketplace.</p>
+            )}
           </div>
 
           {/* AI Banner */}
           {isGeneratingAI && (
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-3 animate-pulse">
               <div className="bg-white p-2 rounded-lg border border-indigo-100 shrink-0 shadow-sm">
-                 <Sparkles className="w-5 h-5 text-indigo-600" />
+                <Sparkles className="w-5 h-5 text-indigo-600" />
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-800 mb-0.5">Asisten AI Sedang Bekerja</p>
@@ -194,7 +134,7 @@ function ProductForm() {
               <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Deskripsi</label>
               <textarea className="w-full border border-gray-200 p-3.5 text-sm rounded-xl focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all bg-gray-50/50 h-28 resize-none" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Harga (Rp) *</label>

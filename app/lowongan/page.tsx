@@ -13,14 +13,6 @@ type Job = {
   phone_number: string | null; is_active: boolean;
 };
 
-const CATEGORIES = ['Semua', 'Industri', 'Pemerintah', 'Digital', 'Pertanian', 'Pendidikan'];
-const TYPE_CONFIG: Record<string, string> = {
-  full_time: 'bg-blue-50 text-blue-700 border-blue-200',
-  part_time: 'bg-violet-50 text-violet-700 border-violet-200',
-  freelance: 'bg-orange-50 text-orange-700 border-orange-200',
-  volunteer: 'bg-green-50 text-green-700 border-green-200',
-};
-
 function JobCard({ job, t, locale }: { job: Job; t: any; locale: string }) {
   const isExpiring = job.deadline ? new Date(job.deadline) <= new Date(Date.now() + 7 * 86400000) : false;
   const TYPE_LABEL: Record<string, string> = { full_time: t('type_full'), part_time: t('type_part'), freelance: t('type_free'), volunteer: t('type_vol') };
@@ -55,11 +47,18 @@ function JobCard({ job, t, locale }: { job: Job; t: any; locale: string }) {
 export default function LowonganPage() {
   const t = useTranslations('lowongan');
   const locale = useLocale();
-  const CATEGORIES = [t('cat_all'), t('cat_industry'), t('cat_gov'), t('cat_digital'), t('cat_agri'), t('cat_edu')];
-  
+  const CATEGORY_DEFS = [
+    { key: 'all', label: t('cat_all') },
+    { key: 'Industri', label: t('cat_industry') },
+    { key: 'Pemerintah', label: t('cat_gov') },
+    { key: 'Digital', label: t('cat_digital') },
+    { key: 'Pertanian', label: t('cat_agri') },
+    { key: 'Pendidikan', label: t('cat_edu') },
+  ];
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState(t('cat_all'));
+  const [category, setCategory] = useState('all');
 
   useEffect(() => {
     let mounted = true;
@@ -72,12 +71,7 @@ export default function LowonganPage() {
 
   const filtered = jobs.filter(j => {
     const matchSearch = j.title.toLowerCase().includes(search.toLowerCase()) || j.company.toLowerCase().includes(search.toLowerCase());
-    
-    const DB_CATS = ['Semua', 'Industri', 'Pemerintah', 'Digital', 'Pertanian', 'Pendidikan'];
-    const sIdx = CATEGORIES.indexOf(category);
-    const dbCat = DB_CATS[sIdx];
-    
-    const matchCat = sIdx === 0 || j.category === dbCat;
+    const matchCat = category === 'all' || j.category === category;
     return matchSearch && matchCat;
   });
 
@@ -104,8 +98,8 @@ export default function LowonganPage() {
       
       <div className="mb-8 lg:mb-10 border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex gap-2 overflow-x-auto scrollbar-none w-full md:w-auto">
-          {CATEGORIES.map(c => (
-            <button key={c} onClick={() => setCategory(c)} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${category === c ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{c}</button>
+          {CATEGORY_DEFS.map(c => (
+            <button key={c.key} onClick={() => setCategory(c.key)} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${category === c.key ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{c.label}</button>
           ))}
         </div>
         <div className="relative w-full md:w-64">

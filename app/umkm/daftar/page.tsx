@@ -2,9 +2,10 @@
 import { useState } from 'react';
 import { Store, Loader2, CheckCircle, ShoppingBag, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 export default function DaftarUMKMPage() {
-  const [formData, setFormData] = useState({ name: '', description: '', city: '', address: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', city: '', address: '', logo_url: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -18,6 +19,7 @@ export default function DaftarUMKMPage() {
         user_id: 'user-warga',
         name: formData.name,
         description: `${formData.description}\n\nAlamat: ${formData.address}`,
+        logo_url: formData.logo_url || null,
         status: 'active',
       }),
     });
@@ -116,6 +118,11 @@ export default function DaftarUMKMPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Jelaskan jenis produk yang dijual..."
               />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Logo Toko</label>
+              <ImageUpload folder="stores" value={formData.logo_url} onChange={(url) => setFormData({ ...formData, logo_url: url })} />
             </div>
 
             {/* Info box */}

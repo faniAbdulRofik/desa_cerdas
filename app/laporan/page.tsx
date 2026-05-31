@@ -14,10 +14,17 @@ import { fetchJson } from '@/lib/api-client';
 export default function LaporanPage() {
   const t = useTranslations('laporan');
   
-  const CATEGORIES = [t('cat_all'), t('cat_infra'), t('cat_waste'), t('cat_health'), t('cat_security'), t('cat_env')];
-  const STATUSES = ['Semua', 'pending', 'in_progress', 'done'];
+  const CATEGORY_DEFS = [
+    { key: 'all', label: t('cat_all') },
+    { key: 'Infrastruktur', label: t('cat_infra') },
+    { key: 'Sampah', label: t('cat_waste') },
+    { key: 'Kesehatan', label: t('cat_health') },
+    { key: 'Keamanan', label: t('cat_security') },
+    { key: 'Lingkungan', label: t('cat_env') },
+  ];
+  const STATUSES = ['all', 'pending', 'in_progress', 'done'];
   const STATUS_LABELS: Record<string,string> = { 
-    Semua: t('stat_all'), 
+    all: t('stat_all'), 
     pending: t('stat_pending'), 
     in_progress: t('stat_process'), 
     done: t('stat_done') 
@@ -26,8 +33,8 @@ export default function LaporanPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('Semua');
-  const [status, setStatus] = useState('Semua');
+  const [category, setCategory] = useState('all');
+  const [status, setStatus] = useState('all');
 
   useEffect(() => {
     let mounted = true;
@@ -41,20 +48,8 @@ export default function LaporanPage() {
 
   const filtered = reports.filter((r) => {
     const matchSearch = r.title.toLowerCase().includes(search.toLowerCase()) || r.description.toLowerCase().includes(search.toLowerCase());
-    // In db they saved as 'Infrastruktur', not English. This is where dynamic data causes mismatch with filter labels if labels are translated but db category is not. 
-    // Actually, report category in DB is saved exactly as the Indonesian dropdown text in [laporan/baru], e.g., 'Infrastruktur'.
-    // If I translate the filter label to 'Infrastructure', it won't match `r.category===category` anymore because DB has 'Infrastruktur'.
-    // Let's implement a safe check: map translates labels back to ID, or assume DB uses ID version.
-    
-    // Workaround: We match by index since `CATEGORIES` array order matches the DB values logically, but actually let's just use the translated string for display, and map it back.
-    // For simplicity right now: let's match the DB string exactly.
-    // Wait, the CATEGORIES index 0 is "All", 1 is DB "Infrastruktur", etc.
-    const DB_CATEGORIES = ['Semua', 'Infrastruktur', 'Sampah', 'Kesehatan', 'Keamanan', 'Lingkungan'];
-    const selectedIndex = CATEGORIES.indexOf(category);
-    const dbCategory = DB_CATEGORIES[selectedIndex];
-
-    const matchCat = selectedIndex === 0 || r.category === dbCategory;
-    const matchStatus = status === 'Semua' || r.status === status;
+    const matchCat = category === 'all' || r.category === category;
+    const matchStatus = status === 'all' || r.status === status;
     return matchSearch && matchCat && matchStatus;
   });
 
@@ -78,17 +73,17 @@ export default function LaporanPage() {
       {/* Search + Filter bar */}
       <div className="mb-8 lg:mb-10 border-b border-gray-200 pb-6 flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div className="flex gap-2 overflow-x-auto scrollbar-none w-full md:w-auto">
-          {CATEGORIES.map((c) => (
+          {CATEGORY_DEFS.map((c) => (
             <button
-              key={c}
-              onClick={() => setCategory(c)}
+              key={c.key}
+              onClick={() => setCategory(c.key)}
               className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                category === c
+                category === c.key
                   ? 'bg-primary-800 text-white'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}
             >
-              {c}
+              {c.label}
             </button>
           ))}
         </div>

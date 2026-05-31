@@ -52,7 +52,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
       <div className="px-6 py-6 border-b border-gray-200 flex flex-col gap-2 shrink-0">
         <Link href="/umkm">
-          <Image src="/logo.webp" alt="DesaMind" width={140} height={36} className="h-8 w-auto object-contain mb-2" />
+          <Image src="/logo.png" alt="DesaMind" width={140} height={36} className="h-8 w-auto object-contain mb-2" />
         </Link>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center justify-center w-5 h-5 border border-primary-200 bg-primary-50 text-primary-800">
@@ -117,7 +117,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
               <Menu className="w-5 h-5" />
             </button>
             <div className="md:hidden">
-              <Image src="/logo.webp" alt="DesaMind" width={110} height={28} className="h-6 w-auto object-contain" />
+              <Image src="/logo.png" alt="DesaMind" width={110} height={28} className="h-6 w-auto object-contain" />
             </div>
             {/* Desktop breadcrumb/title */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-primary-50 rounded-full border border-primary-100">

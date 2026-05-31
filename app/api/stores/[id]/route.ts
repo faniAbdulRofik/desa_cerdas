@@ -3,7 +3,7 @@
  * PATCH: Update store (admin approval/rejection or seller edit).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getRowById, jsonError, updateRow } from '@/lib/api-helpers';
+import { deleteRow, getRowById, jsonError, updateRow } from '@/lib/api-helpers';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,4 +21,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   if (error) return jsonError(error.message);
   return NextResponse.json(data);
+}
+
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { error } = await deleteRow('stores', id);
+
+  if (error) return jsonError(error.message);
+  return NextResponse.json({ deleted: true });
 }

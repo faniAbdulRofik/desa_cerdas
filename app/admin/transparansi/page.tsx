@@ -4,6 +4,7 @@ import { Landmark, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil } from 
 import { TableSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
 import { fetchJson } from '@/lib/api-client';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 
 type Project = {
@@ -18,12 +19,13 @@ type Project = {
   contractor: string | null;
   start_date: string | null;
   end_date: string | null;
+  image_url: string | null;
   created_at: string;
 };
 
 const EMPTY: Omit<Project, 'id' | 'created_at'> = {
   title: '', category: 'Infrastruktur', status: 'planning',
-  budget: 0, spent: 0, progress: 0, description: '', contractor: '', start_date: '', end_date: '',
+  budget: 0, spent: 0, progress: 0, description: '', contractor: '', start_date: '', end_date: '', image_url: '',
 };
 
 function formatRp(n: number) {
@@ -93,7 +95,7 @@ export default function AdminTransparansiPage() {
   }
 
   function startEdit(p: Project) {
-    setForm({ title: p.title, category: p.category, status: p.status, budget: p.budget, spent: p.spent, progress: p.progress, description: p.description ?? '', contractor: p.contractor ?? '', start_date: p.start_date ?? '', end_date: p.end_date ?? '' });
+    setForm({ title: p.title, category: p.category, status: p.status, budget: p.budget, spent: p.spent, progress: p.progress, description: p.description ?? '', contractor: p.contractor ?? '', start_date: p.start_date ?? '', end_date: p.end_date ?? '', image_url: p.image_url ?? '' });
     setEditId(p.id); setShowForm(true);
   }
 
@@ -148,6 +150,9 @@ export default function AdminTransparansiPage() {
               <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-primary-800 bg-gray-50 transition-colors">
                 {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
+            </div>
+            <div className="sm:col-span-2">
+              <ImageUpload label="Foto Proyek" folder="projects" value={form.image_url ?? ''} onChange={(url) => setForm(p => ({ ...p, image_url: url }))} />
             </div>
             <div className="sm:col-span-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-2">{t('lbl_desc')}</label>

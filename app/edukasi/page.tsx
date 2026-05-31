@@ -12,23 +12,12 @@ type Module = {
   rating: number; enrolled: number;
 };
 
-const CATEGORIES = ['Semua', 'Bisnis & Marketing', 'Pertanian', 'Lingkungan', 'Keuangan', 'Kesehatan & Keselamatan', 'Kerajinan & Seni'];
-function getLevelStyles(t: any) {
-  return {
-    [t('lvl_beginner')]: 'bg-primary-950 text-white border-transparent',
-    [t('lvl_intermediate')]: 'bg-gray-100 text-primary-950 border-gray-200',
-    [t('lvl_advanced')]: 'bg-primary-600 text-white border-primary-600',
-  };
-}
-
 function ModuleCard({ mod, t }: { mod: Module; t: any }) {
   const h = Math.floor(mod.duration_minutes / 60);
   const m = mod.duration_minutes % 60;
-  const LEVEL_STYLES = getLevelStyles(t);
-  
-  // Actually, we must be careful with DB saving "Pemula" instead of "Beginner".
-  // mod.level is from DB, likely Indonesian. So we should map DB value to translated string.
-  // DB values: "Pemula", "Menengah", "Lanjutan"
+
+  // mod.level comes from the DB in Indonesian ("Pemula"/"Menengah"/"Lanjutan").
+  // Map it to a translated label for display while styling by the stable DB key.
   const DB_LEVEL_MAP: Record<string, string> = {
     Pemula: t('lvl_beginner'),
     Menengah: t('lvl_intermediate'),
@@ -76,12 +65,19 @@ function ModuleCard({ mod, t }: { mod: Module; t: any }) {
 
 export default function EdukasiPage() {
   const t = useTranslations('edukasi');
-  const CATEGORIES = [t('cat_all'), t('cat_biz'), t('cat_agri'), t('cat_env'), t('cat_fin'), t('cat_health'), t('cat_art')];
-  const DB_CATS = ['Semua', 'Bisnis & Marketing', 'Pertanian', 'Lingkungan', 'Keuangan', 'Kesehatan & Keselamatan', 'Kerajinan & Seni'];
+  const CATEGORY_DEFS = [
+    { key: 'all', label: t('cat_all') },
+    { key: 'Bisnis & Marketing', label: t('cat_biz') },
+    { key: 'Pertanian', label: t('cat_agri') },
+    { key: 'Lingkungan', label: t('cat_env') },
+    { key: 'Keuangan', label: t('cat_fin') },
+    { key: 'Kesehatan & Keselamatan', label: t('cat_health') },
+    { key: 'Kerajinan & Seni', label: t('cat_art') },
+  ];
 
   const [modules, setModules] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState(t('cat_all'));
+  const [category, setCategory] = useState('all');
 
   useEffect(() => {
     let mounted = true;
@@ -93,9 +89,7 @@ export default function EdukasiPage() {
 
   const filtered = modules.filter(m => {
     const matchSearch = m.title.toLowerCase().includes(search.toLowerCase());
-    const sIdx = CATEGORIES.indexOf(category);
-    const dbCat = DB_CATS[sIdx];
-    const matchCat = sIdx === 0 || m.category === dbCat;
+    const matchCat = category === 'all' || m.category === category;
     return matchSearch && matchCat;
   });
 
@@ -109,8 +103,8 @@ export default function EdukasiPage() {
         </h1>
         <div className="flex-1" />
         <div className="flex gap-2 flex-wrap pb-1">
-          {CATEGORIES.slice(0, 4).map(c => (
-            <button key={c} onClick={() => setCategory(c)} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${category === c ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{c}</button>
+          {CATEGORY_DEFS.slice(0, 4).map(c => (
+            <button key={c.key} onClick={() => setCategory(c.key)} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors ${category === c.key ? 'bg-primary-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{c.label}</button>
           ))}
         </div>
       </div>

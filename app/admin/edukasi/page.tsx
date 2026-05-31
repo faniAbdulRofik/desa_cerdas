@@ -4,6 +4,7 @@ import { GraduationCap, Plus, Trash2, Loader2, AlertCircle, RefreshCw, Pencil, E
 import { CardGridSkeleton } from '@/components/ui/Skeletons';
 import { useTranslations } from 'next-intl';
 import { fetchJson } from '@/lib/api-client';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 
 type Module = {
@@ -104,8 +105,11 @@ export default function AdminEdukasiPage() {
               <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-2">{t('lbl_title')}</label>
               <input type="text" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className="w-full px-4 py-3 border border-gray-200 text-sm focus:outline-none focus:border-primary-800 bg-gray-50 transition-colors" />
             </div>
+            <div className="sm:col-span-2">
+              <ImageUpload label={t('lbl_image')} folder="training" value={form.image_url} onChange={(url) => setForm(p => ({ ...p, image_url: url }))} />
+            </div>
             {[
-              { label: t('lbl_image'), key: 'image_url' }, { label: t('lbl_duration'), key: 'duration_minutes', type: 'number' },
+              { label: t('lbl_duration'), key: 'duration_minutes', type: 'number' },
               { label: t('lbl_rating'), key: 'rating', type: 'number' }, { label: t('lbl_enrolled'), key: 'enrolled', type: 'number' },
             ].map(f => (
               <div key={f.key}>

@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
@@ -15,7 +15,6 @@ import {
   Store,
   MapPin,
   Settings,
-  Map,
   LogOut,
   Sparkles,
   Landmark,
@@ -29,6 +28,8 @@ import {
   Megaphone,
   Camera,
   PieChart,
+  Loader2,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -37,6 +38,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const t = useTranslations('admin_layout');
   const tAdmin = useTranslations('admin_pages');
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAdmin, loading, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMapSection = pathname.startsWith('/peta') || pathname.startsWith('/admin/pengaturan-peta');
   const isUmkmSection = pathname.startsWith('/admin/umkm');
@@ -68,6 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       items: [
         { href: '/admin', label: t('nav_dashboard'), icon: LayoutDashboard, exact: true },
         { href: '/admin/laporan', label: t('nav_laporan'), icon: FileText },
+        { href: '/admin/warga', label: 'Kelola Warga', icon: Users },
         { href: '/admin/transparansi', label: t('nav_transparansi'), icon: Landmark },
       ],
     },
@@ -122,11 +126,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   ];
 
+  // Redirect non-admins away once auth state is resolved.
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      router.replace('/auth/login');
+    }
+  }, [loading, isAdmin, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-bg gap-3">
+        <Loader2 className="w-8 h-8 text-primary-700 animate-spin" />
+        <p className="text-sm font-semibold text-gray-500">Memuat panel admin...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-bg gap-4 px-6 text-center">
+        <div className="w-14 h-14 rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
+          <ShieldAlert className="w-7 h-7 text-red-500" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900">Akses Ditolak</h1>
+        <p className="text-sm text-gray-500 max-w-sm">
+          Halaman ini hanya untuk admin desa. Silakan masuk dengan akun admin.
+        </p>
+        <Link href="/auth/login" className="px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors">
+          Masuk sebagai Admin
+        </Link>
+      </div>
+    );
+  }
+
   const SidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
       <div className="px-6 py-6 border-b border-gray-200 flex flex-col gap-2 shrink-0">
         <Link href="/">
-          <Image src="/logo.webp" alt="DesaMind" width={140} height={36} className="h-8 w-auto object-contain mb-2" />
+          <Image src="/logo.png" alt="DesaMind" width={140} height={36} className="h-8 w-auto object-contain mb-2" />
         </Link>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center justify-center w-5 h-5 border border-primary-200 bg-primary-50 text-primary-800">
@@ -219,10 +256,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Settings className="w-4.5 h-4.5 text-gray-400" />
           {t('settings')}
         </Link>
-        <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all">
+        <button onClick={async () => { await logout(); router.replace('/auth/login'); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all">
           <LogOut className="w-4.5 h-4.5 text-red-500" />
           {t('logout')}
-        </Link>
+        </button>
       </div>
     </div>
   );
@@ -259,7 +296,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Menu className="w-5 h-5" />
             </button>
             <div className="md:hidden">
-              <Image src="/logo.webp" alt="DesaMind" width={110} height={28} className="h-6 w-auto object-contain" />
+              <Image src="/logo.png" alt="DesaMind" width={110} height={28} className="h-6 w-auto object-contain" />
             </div>
             {/* Desktop breadcrumb/title */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-primary-50 rounded-full border border-primary-100">
@@ -270,10 +307,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           
           <div className="flex items-center gap-4">
              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-sm font-bold text-gray-800">Admin DesaMind</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary-600">Super Admin</span>
+                <span className="text-sm font-bold text-gray-800">{user?.name ?? 'Admin DesaMind'}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary-600">Administrator</span>
              </div>
-             <div className="w-8 h-8 rounded-full bg-primary-800 flex items-center justify-center text-white text-[11px] font-bold ring-2 ring-white shadow-sm">AD</div>
+             <div className="w-8 h-8 rounded-full bg-primary-800 flex items-center justify-center text-white text-[11px] font-bold ring-2 ring-white shadow-sm">{user?.avatar ?? 'AD'}</div>
           </div>
         </header>
 

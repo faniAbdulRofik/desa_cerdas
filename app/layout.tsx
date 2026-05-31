@@ -19,7 +19,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale}>
-      <body className="flex flex-col min-h-screen bg-bg font-sans">
+      <body className="flex flex-col min-h-screen bg-bg font-sans" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages} locale={locale}>
           <CartProvider>
             <Navbar />

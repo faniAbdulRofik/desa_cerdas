@@ -1,80 +1,84 @@
 /**
  * lib/auth.ts
- * Custom lightweight auth system (replaces Clerk for static/semi-dynamic mode).
- * Uses localStorage to persist a demo user session.
+ * Client-side auth helpers that talk to the real /api/auth endpoints
+ * (backed by Supabase Auth + httpOnly session cookies).
+ *
+ * No passwords or tokens are stored in the browser/localStorage — the
+ * session lives in secure httpOnly cookies managed by the server.
  */
 
-export type DemoUser = {
+export type AppRole = 'warga' | 'admin';
+export type AppStatus = 'active' | 'pending' | 'suspended';
+
+export type AuthUser = {
   id: string;
-  name: string;
   email: string;
-  avatar: string; // initials-based, e.g. "BW"
-  role: 'admin' | 'user';
+  name: string;
+  role: AppRole;
+  status: AppStatus;
+  avatar: string;
+  created_at: string;
 };
 
-const DEMO_USERS: DemoUser[] = [
-  {
-    id: 'user-admin',
-    name: 'Admin DesaMind',
-    email: 'admin@desamind.id',
-    avatar: 'AD',
-    role: 'admin',
-  },
-  {
-    id: 'user-warga',
-    name: 'Budi Warga',
-    email: 'budi@desamind.id',
-    avatar: 'BW',
-    role: 'user',
-  },
-];
+// Backwards-compatible alias (old code referenced DemoUser).
+export type DemoUser = AuthUser;
 
-const SESSION_KEY = 'desamind_session';
+export type AuthResult = {
+  ok: boolean;
+  user?: AuthUser;
+  error?: string;
+  pending?: boolean;
+};
 
-/** Get the currently logged-in user (null if not logged in) */
-export function getSession(): DemoUser | null {
-  if (typeof window === 'undefined') return null;
+/** Resolve the current logged-in user from the session cookie. */
+export async function fetchCurrentUser(): Promise<AuthUser | null> {
   try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as DemoUser;
+    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.user ?? null;
   } catch {
     return null;
   }
 }
 
-/** Log in with email. Returns user or null if not found. */
-export function login(email: string, _password: string): DemoUser | null {
-  const user = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (!user) return null;
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-  return user;
+export async function login(email: string, password: string): Promise<AuthResult> {
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: data.error ?? 'Gagal masuk.' };
+    return { ok: true, user: data.user };
+  } catch {
+    return { ok: false, error: 'Tidak dapat terhubung ke server.' };
+  }
 }
 
-/** Log out */
-export function logout(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(SESSION_KEY);
-  window.dispatchEvent(new Event('auth-change'));
+export async function register(name: string, email: string, password: string): Promise<AuthResult> {
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, error: data.error ?? 'Gagal mendaftar.' };
+    return { ok: true, user: data.user, pending: Boolean(data.pending) };
+  } catch {
+    return { ok: false, error: 'Tidak dapat terhubung ke server.' };
+  }
 }
 
-/** Register a new demo account */
-export function register(name: string, email: string): DemoUser {
-  const newUser: DemoUser = {
-    id: `user-${Date.now()}`,
-    name,
-    email,
-    avatar: name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U',
-    role: 'user',
-  };
-  DEMO_USERS.push(newUser);
-  localStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
-  return newUser;
+export async function logout(): Promise<void> {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch {
+    // ignore
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('auth-change'));
+  }
 }
-
-/** Available demo accounts for login hint UI */
-export const DEMO_ACCOUNTS = DEMO_USERS.map(u => ({
-  email: u.email,
-  name: u.name,
-  role: u.role,
-}));
