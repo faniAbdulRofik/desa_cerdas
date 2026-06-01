@@ -44,18 +44,7 @@ module.exports = {
         surface: '#FFFFFF',
       },
       fontFamily: {
-        sans: ['"Raleway"', 'system-ui', 'sans-serif'],
-      },
-      borderRadius: {
-        'none': '0px',
-        'sm': '0px',
-        DEFAULT: '0px',
-        'md': '0px',
-        'lg': '0px',
-        'xl': '0px',
-        '2xl': '0px',
-        '3xl': '0px',
-        'full': '9999px',
+        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
