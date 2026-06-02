@@ -1,8 +1,8 @@
-// middleware.ts — simplified for static/semi-dynamic mode (no auth protection)
+// proxy.ts - simplified for static/semi-dynamic mode (no auth protection)
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(_request: NextRequest) {
+export function proxy(_request: NextRequest) {
   return NextResponse.next();
 }
 

@@ -10,12 +10,7 @@
 import Link from 'next/link';
 import { AnimatedSection } from '@/components/ui/AnimatedSection';
 import { ReportCard } from '@/components/ui/ReportCard';
-import { useTranslations } from 'next-intl';
-
-interface Report {
-  id: string;
-  [key: string]: unknown;
-}
+import type { Report } from '@/lib/types';
 
 interface HomeLatestReportsProps {
   reports: Report[];
