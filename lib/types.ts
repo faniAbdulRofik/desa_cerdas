@@ -145,6 +145,31 @@ export type HealthScore = {
   trend: 'naik' | 'turun' | 'stabil';
   ai_narrative: string;
   last_updated: string;
+  source_stats?: {
+    reports: {
+      total: number;
+      pending: number;
+      in_progress: number;
+      completed: number;
+    };
+    projects: {
+      total: number;
+      average_progress: number;
+    };
+    community: {
+      actions: number;
+      participants: number;
+    };
+    economy: {
+      active_stores: number;
+      paid_orders: number;
+      active_jobs: number;
+    };
+    emergency: {
+      active: number;
+      resolved: number;
+    };
+  };
 };
 
 export type AIPrediction = {

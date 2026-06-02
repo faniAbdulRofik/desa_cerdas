@@ -16,6 +16,7 @@
  *                       an admin approves them.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { readSessionTokens } from '@/lib/session';
 
 export type AppRole = 'warga' | 'admin';
 export type AppStatus = 'active' | 'pending' | 'suspended';
@@ -104,4 +105,38 @@ export async function findUserByEmail(email: string) {
     if (data.users.length < 200) break;
   }
   return null;
+}
+
+export async function listAuthUsers() {
+  const admin = getAdminAuthClient();
+  if (!admin) return [];
+
+  const users: AuthUser[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+    if (error || !data) {
+      console.error('[AUTH] Failed to list users:', error);
+      return users;
+    }
+
+    users.push(...data.users.map(toAuthUser));
+    if (data.users.length < 200) break;
+  }
+
+  return users;
+}
+
+/** Resolve the current authenticated user from httpOnly session cookies. */
+export async function getCurrentAuthUser(): Promise<AuthUser | null> {
+  const anon = getAnonAuthClient();
+  if (!anon) return null;
+
+  const { accessToken } = await readSessionTokens();
+  if (!accessToken) return null;
+
+  const { data, error } = await anon.auth.getUser(accessToken);
+  if (error || !data.user) return null;
+
+  const user = toAuthUser(data.user);
+  return user.status === 'active' ? user : null;
 }

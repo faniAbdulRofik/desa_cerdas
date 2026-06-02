@@ -36,6 +36,7 @@ export default function EdukasiDetailPage({ params }: { params: Promise<{ id: st
   if (loading) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-sm text-gray-500">Memuat modul...</div>;
   if (!mod) notFound();
 
+  const lessons = Array.isArray(mod.lessons) ? mod.lessons : [];
   const hours = Math.floor(mod.duration_minutes / 60);
   const mins = mod.duration_minutes % 60;
 
@@ -64,7 +65,7 @@ export default function EdukasiDetailPage({ params }: { params: Promise<{ id: st
         <span className="flex items-center gap-1.5"><Star className="w-4 h-4 text-accent-700 fill-accent-700" /><strong>{mod.rating.toFixed(1)}</strong></span>
         <span className="flex items-center gap-1.5"><Users className="w-4 h-4" />{mod.enrolled} peserta</span>
         <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />{hours > 0 ? `${hours} jam ` : ''}{mins > 0 ? `${mins} menit` : ''}</span>
-        <span className="flex items-center gap-1.5"><GraduationCap className="w-4 h-4" />{mod.lessons.length} pelajaran</span>
+        <span className="flex items-center gap-1.5"><GraduationCap className="w-4 h-4" />{lessons.length} pelajaran</span>
         <span className="ml-auto text-sm font-bold text-green-600">GRATIS</span>
       </div>
 
@@ -78,10 +79,10 @@ export default function EdukasiDetailPage({ params }: { params: Promise<{ id: st
       <div className="bg-white border border-gray-200 shadow-sm mb-6 overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Daftar Pelajaran</h2>
-          <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">{mod.lessons.length} pelajaran</span>
+          <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">{lessons.length} pelajaran</span>
         </div>
         <ul className="divide-y divide-gray-50">
-          {mod.lessons.map((lesson, i) => (
+          {lessons.map((lesson, i) => (
             <li key={i} className={`flex items-center gap-4 px-6 py-4 ${enrolled || i === 0 ? 'cursor-pointer hover:bg-gray-50' : 'opacity-60'} transition-colors`}>
               <div className={`w-8 h-8 flex items-center justify-center shrink-0 border ${enrolled || i === 0 ? 'bg-primary-900 border-primary-900' : 'bg-gray-100 border-gray-200'}`}>
                 {enrolled || i === 0

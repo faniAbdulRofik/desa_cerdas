@@ -2,13 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '@/components/marketplace/CartContext';
 import { formatRupiah } from '@/lib/utils';
-import { Loader2, ArrowLeft, MapPin, Truck, ShieldCheck, CreditCard, ShoppingBag, CheckCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, Truck, ShieldCheck, CreditCard, ShoppingBag, Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function CheckoutPage() {
-  const { items, total, clear } = useCart();
+  const { items, total, clear, updateQty, removeItem, validateCart, isValidating } = useCart();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [shippingLoading, setShippingLoading] = useState(false);
@@ -33,6 +33,10 @@ export default function CheckoutPage() {
   const grandTotal = total + shippingCost;
 
 
+
+  useEffect(() => {
+    validateCart();
+  }, [validateCart]);
 
   useEffect(() => {
     fetch('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json')
@@ -98,13 +102,21 @@ export default function CheckoutPage() {
 
      setLoading(true);
      try {
+       const validItems = await validateCart();
+       if (validItems.length === 0) {
+          alert('Keranjang sudah kosong karena produk tidak tersedia lagi.');
+          return;
+       }
+       const validTotal = validItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+       const validGrandTotal = validTotal + shippingCost;
+
        const response = await fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
              buyer_id: user?.id || 'guest',
-             store_id: items[0]?.product.store_id,
-             total_amount: grandTotal,
+             store_id: validItems[0]?.product.store_id,
+             total_amount: validGrandTotal,
              payment_method: form.paymentMethod,
              customer_details: {
                 first_name: form.name,
@@ -113,7 +125,7 @@ export default function CheckoutPage() {
                 city: form.city,
                 shipping_cost: shippingCost,
              },
-             items: items.map((item) => ({
+             items: validItems.map((item) => ({
                 id: item.product.id,
                 name: item.product.name,
                 price: item.product.price,
@@ -282,6 +294,12 @@ export default function CheckoutPage() {
                  </h2>
                  
                  <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2">
+                    {isValidating && (
+                       <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary-700 bg-primary-50 border border-primary-100 px-3 py-2">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Memeriksa ketersediaan produk
+                       </div>
+                    )}
                     {items.map(item => (
                        <div key={item.product.id} className="flex gap-4 items-center">
                           <div className="relative w-14 h-14 overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
@@ -293,6 +311,34 @@ export default function CheckoutPage() {
                           <div className="flex-1 min-w-0">
                              <h4 className="text-sm font-semibold text-primary-950 truncate">{item.product.name}</h4>
                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">{formatRupiah(item.product.price)} <span className="font-normal">/ pcs</span></p>
+                             <div className="flex items-center gap-2 mt-2">
+                                <button
+                                  type="button"
+                                  onClick={() => updateQty(item.product.id, item.quantity - 1)}
+                                  className="w-7 h-7 border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors"
+                                  aria-label="Kurangi jumlah"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="w-8 text-center text-xs font-bold text-gray-800">{item.quantity}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => updateQty(item.product.id, item.quantity + 1)}
+                                  disabled={item.quantity >= Number(item.product.stock ?? 0)}
+                                  className="w-7 h-7 border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  aria-label="Tambah jumlah"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeItem(item.product.id)}
+                                  className="w-7 h-7 text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors"
+                                  aria-label="Hapus produk"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                             </div>
                           </div>
                           <div className="font-bold text-sm text-primary-900 shrink-0">
                              {formatRupiah(item.product.price * item.quantity)}

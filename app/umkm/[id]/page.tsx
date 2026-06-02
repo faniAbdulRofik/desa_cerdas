@@ -6,7 +6,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Star, ShoppingBag, Phone, ShoppingCart, Check, Loader2, Store } from 'lucide-react';
+import { ArrowLeft, Star, ShoppingBag, Phone, ShoppingCart, Check, Loader2, Store, MapPin, ChevronRight } from 'lucide-react';
 import { useCart } from '@/components/marketplace/CartContext';
 import { formatRupiah } from '@/lib/utils';
 import { useParams } from 'next/navigation';
@@ -84,6 +84,8 @@ export default function ProductDetailPage() {
     : 0;
 
   const waText = encodeURIComponent(`Halo ${product.seller_name}, saya tertarik dengan produk "${product.name}" di DesaMind. Apakah masih tersedia?`);
+  const store = product.stores;
+  const storeHref = product.store_id ? `/umkm/store/${product.store_id}` : null;
 
   return (
     <div className="min-h-[calc(100dvh-5rem)] bg-bg pt-10 lg:pt-12 pb-14 px-4">
@@ -134,15 +136,31 @@ export default function ProductDetailPage() {
             {/* Seller info */}
             <div className="p-4 bg-gray-50 border border-gray-200 mb-6">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Penjual</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-primary-600" />
+              <Link
+                href={storeHref || '/umkm'}
+                className="group flex items-center justify-between gap-3 hover:bg-white/70 transition-colors -m-2 p-2"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden border border-primary-100 shrink-0">
+                    {store?.logo_url ? (
+                      <Image src={store.logo_url} alt={store.name || product.seller_name} fill className="object-cover" unoptimized />
+                    ) : (
+                      <ShoppingBag className="w-5 h-5 text-primary-600" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-gray-900 group-hover:text-primary-800 transition-colors">{store?.name || product.seller_name}</p>
+                    <p className="text-xs text-gray-500">Seller terverifikasi</p>
+                    {store?.address && (
+                      <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1 truncate">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        {store.address}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{product.seller_name}</p>
-                  <p className="text-xs text-gray-500">Seller terverifikasi</p>
-                </div>
-              </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary-700 shrink-0" />
+              </Link>
             </div>
 
             {/* Stock */}

@@ -34,7 +34,7 @@ export function ProductCard({ product }: { product: Product }) {
       seller_name: product.seller_name,
       category: product.category,
       phone_number: product.phone_number || '',
-      stock: 99,
+      stock: product.stock ?? 0,
       store_id: (product as any).store_id || undefined,
     });
     setAdded(true);

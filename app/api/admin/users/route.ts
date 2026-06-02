@@ -9,19 +9,13 @@
  * verify the caller's role server-side (see lib/session + me route).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuthClient, toAuthUser, type AppStatus, type AppRole } from '@/lib/auth-server';
+import { getAdminAuthClient, listAuthUsers, toAuthUser, type AppStatus, type AppRole } from '@/lib/auth-server';
 
 export async function GET() {
   const admin = getAdminAuthClient();
   if (!admin) return NextResponse.json({ error: 'Auth belum dikonfigurasi.' }, { status: 503 });
 
-  const users: ReturnType<typeof toAuthUser>[] = [];
-  for (let page = 1; page <= 20; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    users.push(...data.users.map(toAuthUser));
-    if (data.users.length < 200) break;
-  }
+  const users = await listAuthUsers();
 
   users.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   return NextResponse.json(users);

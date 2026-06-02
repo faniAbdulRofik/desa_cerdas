@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jsonError, listRows } from '@/lib/api-helpers';
+import { getRowById, jsonError, listRows } from '@/lib/api-helpers';
+import { getCurrentAuthUser } from '@/lib/auth-server';
 import { getSupabaseServerClient } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
@@ -18,30 +19,42 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { order_id, product_id, buyer_id, rating, comment } = body;
+    const user = await getCurrentAuthUser();
+    if (!user) return jsonError('Login diperlukan untuk memberi ulasan.', 401);
 
-    if (!order_id || !product_id || !buyer_id || !rating) {
+    const body = await request.json();
+    const { order_id, product_id, rating, comment } = body;
+
+    if (!order_id || !product_id || !rating) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const order = await getRowById<any>('orders', order_id);
+    if (!order || order.buyer_id !== user.id || order.status !== 'selesai') {
+      return jsonError('Pesanan tidak valid untuk ulasan.', 403);
     }
 
     const supabase = getSupabaseServerClient();
     if (!supabase) {
-      return NextResponse.json({
-        id: `review-${Date.now()}`,
-        order_id,
-        product_id,
-        buyer_id,
-        rating,
-        comment,
-        created_at: new Date().toISOString(),
-      }, { status: 201 });
+      return jsonError('Database is not configured');
+    }
+
+    const { data: orderItem, error: orderItemError } = await supabase
+      .from('order_items')
+      .select('id')
+      .eq('order_id', order_id)
+      .eq('product_id', product_id)
+      .maybeSingle();
+
+    if (orderItemError) throw orderItemError;
+    if (!orderItem) {
+      return jsonError('Produk ini tidak ditemukan pada pesanan tersebut.', 403);
     }
 
     // Insert review
     const { data, error } = await supabase
       .from('reviews')
-      .insert([{ order_id, product_id, buyer_id, rating, comment }])
+      .insert([{ order_id, product_id, buyer_id: user.id, rating, comment }])
       .select()
       .single();
 

@@ -16,15 +16,17 @@ export default function DaftarUMKMPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: 'user-warga',
         name: formData.name,
-        description: `${formData.description}\n\nAlamat: ${formData.address}`,
+        description: formData.description,
+        address: formData.address,
         logo_url: formData.logo_url || null,
-        status: 'active',
       }),
     });
     if (res.ok) setSuccess(true);
-    else alert('Gagal mendaftarkan toko.');
+    else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || 'Gagal mendaftarkan toko.');
+    }
     setLoading(false);
   }
 
@@ -42,13 +44,13 @@ export default function DaftarUMKMPage() {
               Toko <strong className="text-primary-800">{formData.name || 'UMKM Anda'}</strong> telah didaftarkan.
             </p>
             <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-              Toko Anda langsung aktif dan dapat digunakan untuk mengelola produk.
+              Pendaftaran toko Anda menunggu verifikasi admin sebelum dashboard dan produk dapat digunakan.
             </p>
             <Link
               href="/umkm/toko"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors"
             >
-              Masuk ke Dashboard Toko
+              Lihat Status Toko
             </Link>
           </div>
         </div>
@@ -130,7 +132,7 @@ export default function DaftarUMKMPage() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">Catatan</p>
               <ul className="text-xs text-amber-600 space-y-1 leading-relaxed">
                 <li>Data toko akan disimpan melalui backend marketplace.</li>
-                <li>â€¢ Setelah mendaftar, Anda dapat mengunjungi Dashboard Toko.</li>
+                <li>Setelah mendaftar, admin perlu memverifikasi toko sebelum produk bisa ditambahkan.</li>
               </ul>
             </div>
 

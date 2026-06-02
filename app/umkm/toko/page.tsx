@@ -7,32 +7,63 @@ import Link from 'next/link';
 import { StatCard } from '@/components/ui/StatCard';
 import { fetchJson } from '@/lib/api-client';
 
+const REVENUE_STATUSES = ['terbayar', 'diproses', 'dikirim', 'selesai'];
+const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+function buildSalesTrend(orders: any[]) {
+  const now = new Date();
+  const months = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    return {
+      key: `${date.getFullYear()}-${date.getMonth()}`,
+      name: MONTH_LABELS[date.getMonth()],
+      orders: 0,
+      revenue: 0,
+    };
+  });
+
+  const monthMap = new Map(months.map((month) => [month.key, month]));
+
+  orders
+    .filter((order) => REVENUE_STATUSES.includes(order.status))
+    .forEach((order) => {
+      const createdAt = new Date(order.created_at);
+      if (Number.isNaN(createdAt.getTime())) return;
+
+      const key = `${createdAt.getFullYear()}-${createdAt.getMonth()}`;
+      const month = monthMap.get(key);
+      if (!month) return;
+
+      month.orders += 1;
+      month.revenue += Number(order.total_amount || 0);
+    });
+
+  return months;
+}
+
 export default function SellerDashboardHome() {
   const [stats, setStats] = useState({
      products: 0, earnings: 0, orders: 0, reviews: 0,
      pendingOrders: 0
   });
+  const [chartData, setChartData] = useState(() => buildSalesTrend([]));
 
   useEffect(() => {
      Promise.all([
-       fetchJson('/api/products', []),
-       fetchJson('/api/orders', [] as any[]),
+       fetchJson('/api/products?owner=me', []),
+       fetchJson('/api/orders?owner=me', [] as any[]),
      ]).then(([products, orders]) => {
+       const revenueOrders = orders.filter((order) => REVENUE_STATUSES.includes(order.status));
        setStats({
          products: products.length,
-         earnings: orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0),
-         orders: orders.length,
-         pendingOrders: orders.filter((order) => ['pending', 'terbayar', 'diproses'].includes(order.status)).length,
+         earnings: revenueOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0),
+         orders: orders.filter((order) => order.status === 'selesai').length,
+         pendingOrders: orders.filter((order) => order.status === 'pending').length,
          reviews: 0
        });
+       setChartData(buildSalesTrend(orders));
      });
   }, []);
-
-  const chartData = [
-     { name: 'Jan', orders: 0 }, { name: 'Feb', orders: 0 },
-     { name: 'Mar', orders: 0 }, { name: 'Apr', orders: 0 },
-     { name: 'Mei', orders: 0 }, { name: 'Jun', orders: 0 },
-  ];
 
   return (
     <div className="space-y-6">
@@ -45,7 +76,7 @@ export default function SellerDashboardHome() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Package} label="TOTAL PRODUK" value={stats.products} />
-        <StatCard icon={Clock} label="MENUNGGU" value={stats.pendingOrders} />
+        <StatCard icon={Clock} label="MENUNGGU BAYAR" value={stats.pendingOrders} />
         <StatCard icon={CheckCircle} label="PESANAN SELESAI" value={stats.orders} />
         <StatCard icon={DollarSign} label="TOTAL PENDAPATAN" value={formatRupiah(stats.earnings)} accent />
       </div>

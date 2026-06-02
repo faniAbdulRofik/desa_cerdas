@@ -33,6 +33,11 @@ const emptyDashboardStats = {
   totalCitizens: 0,
 };
 
+function formatCount(value: number) {
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+  return value;
+}
+
 export default function AdminDashboardPage() {
   const t = useTranslations('admin_dashboard');
   const [stats, setStats] = useState(emptyDashboardStats);
@@ -87,7 +92,7 @@ export default function AdminDashboardPage() {
           <>
             <StatCard icon={TrendingUp} label={t('stat_resolution_rate')} value={`${resolutionRate}%`} accent />
             <StatCard icon={Store} label={t('stat_active_umkm')} value={stats.activeUMKM} />
-            <StatCard icon={Users} label={t('stat_total_citizens')} value={`${(stats.totalCitizens / 1000).toFixed(1)}K`} />
+            <StatCard icon={Users} label={t('stat_total_citizens')} value={formatCount(stats.totalCitizens)} />
           </>
         )}
       </div>

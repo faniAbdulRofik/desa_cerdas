@@ -5,16 +5,18 @@
  */
 import { NextResponse } from 'next/server';
 import { countRows, listRows } from '@/lib/api-helpers';
+import { listAuthUsers } from '@/lib/auth-server';
 
 export async function GET() {
   try {
-    const [total, pending, inProgress, completed, products, reports] = await Promise.all([
+    const [total, pending, inProgress, completed, products, reports, users] = await Promise.all([
       countRows('reports'),
       countRows('reports', { status: 'pending' }),
       countRows('reports', { status: 'in_progress' }),
       countRows('reports', { status: 'completed' }),
       listRows('products'),
       listRows('reports'),
+      listAuthUsers(),
     ]);
 
     const totalCount = total ?? 0;
@@ -37,7 +39,7 @@ export async function GET() {
       completedReports: completedCount,
       resolutionRate: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
       activeUMKM: products.length,
-      totalCitizens: 0,
+      totalCitizens: users.filter((user) => user.role === 'warga').length,
       categoryData,
       trendData: buildTrendData(reports),
     });

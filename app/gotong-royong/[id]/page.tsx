@@ -8,12 +8,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { use } from 'react';
-import { Users, MapPin, Calendar, Clock, ChevronLeft, CheckCircle, Loader2, Share2 } from 'lucide-react';
+import { Users, MapPin, Calendar, Clock, ChevronLeft, CheckCircle, Loader2, Share2, UserRound, Mail } from 'lucide-react';
 import { fetchJson } from '@/lib/api-client';
 
 export default function GotongRoyongDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [action, setAction] = useState<any>(null);
+  const [participants, setParticipants] = useState<any[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [joined, setJoined] = useState(false);
@@ -21,9 +22,13 @@ export default function GotongRoyongDetailPage({ params }: { params: Promise<{ i
 
   useEffect(() => {
     let mounted = true;
-    fetchJson(`/api/actions/${id}`, null).then((data) => {
+    Promise.all([
+      fetchJson(`/api/actions/${id}`, null),
+      fetchJson(`/api/actions/${id}/participants`, []),
+    ]).then(([data, participantData]) => {
       if (!mounted) return;
       setAction(data);
+      setParticipants(Array.isArray(participantData) ? participantData : []);
       setInitialLoading(false);
     });
     return () => { mounted = false; };
@@ -36,14 +41,23 @@ export default function GotongRoyongDetailPage({ params }: { params: Promise<{ i
 
   async function handleJoin() {
     setLoading(true);
-    await fetch(`/api/actions/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ current_participants: action.current_participants + 1 }),
-    }).catch(() => undefined);
-    setAction((prev: any) => prev ? { ...prev, current_participants: prev.current_participants + 1 } : prev);
-    setJoined(true);
-    setLoading(false);
+    try {
+      const response = await fetch(`/api/actions/${id}/participants`, {
+        method: 'POST',
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        alert(data.error || 'Gagal mendaftar kegiatan.');
+        return;
+      }
+
+      setAction((prev: any) => prev ? { ...prev, current_participants: data.current_participants ?? prev.current_participants + 1 } : prev);
+      if (data.participant) setParticipants((prev) => [...prev, data.participant]);
+      setJoined(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -100,6 +114,52 @@ export default function GotongRoyongDetailPage({ params }: { params: Promise<{ i
           <div className="h-full bg-primary-800 transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
         </div>
         <p className="text-[9px] font-bold tracking-widest text-gray-400 uppercase">{action.max_participants - action.current_participants} tempat tersisa</p>
+
+        <div className="mt-6 pt-5 border-t border-gray-100">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Daftar Peserta</h3>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{participants.length} terlihat</span>
+          </div>
+
+          {participants.length === 0 ? (
+            <div className="bg-gray-50 border border-gray-100 p-4 text-sm text-gray-500">
+              Detail nama peserta belum tersedia. Data lama hanya menyimpan jumlah peserta, sedangkan pendaftaran baru akan tampil di sini.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {participants.map((participant) => {
+                const initials = String(participant.name || 'W')
+                  .split(' ')
+                  .map((part) => part[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase();
+
+                return (
+                  <div key={participant.id || participant.user_id} className="flex items-start gap-3 bg-gray-50 border border-gray-100 p-3">
+                    <div className="w-9 h-9 rounded-full bg-primary-100 text-primary-800 flex items-center justify-center text-[11px] font-bold shrink-0">
+                      {initials || <UserRound className="w-4 h-4" />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-800 truncate">{participant.name || 'Warga'}</p>
+                      {participant.email && (
+                        <p className="text-[11px] text-gray-500 flex items-center gap-1 truncate mt-0.5">
+                          <Mail className="w-3 h-3 shrink-0" />
+                          {participant.email}
+                        </p>
+                      )}
+                      {participant.created_at && (
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mt-1">
+                          Daftar {new Date(participant.created_at).toLocaleDateString('id-ID')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* CTA */}

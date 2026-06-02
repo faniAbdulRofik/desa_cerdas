@@ -114,6 +114,7 @@ export default function SkorDesaPage() {
   }
 
   const TrendIcon = score.trend === 'naik' ? TrendingUp : score.trend === 'turun' ? TrendingDown : Minus;
+  const sourceStats = score.source_stats;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-14 lg:py-16">
@@ -185,6 +186,29 @@ export default function SkorDesaPage() {
           ))}
         </div>
       </div>
+
+      {sourceStats && (
+        <div className="bg-white border border-gray-200 p-8 mb-8">
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-6 border-b border-gray-100 pb-4">
+            Sumber Data Perhitungan
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Laporan Warga', value: sourceStats.reports.total, detail: `${sourceStats.reports.completed} selesai, ${sourceStats.reports.in_progress} proses, ${sourceStats.reports.pending} pending` },
+              { label: 'Proyek Desa', value: sourceStats.projects.total, detail: `Rata-rata progres ${sourceStats.projects.average_progress}%` },
+              { label: 'Kegiatan Warga', value: sourceStats.community.actions, detail: `${sourceStats.community.participants} peserta terdata` },
+              { label: 'Ekonomi Desa', value: sourceStats.economy.active_stores, detail: `${sourceStats.economy.paid_orders} pesanan, ${sourceStats.economy.active_jobs} lowongan aktif` },
+              { label: 'Data Darurat', value: sourceStats.emergency.active, detail: `${sourceStats.emergency.resolved} terselesaikan` },
+            ].map((item) => (
+              <div key={item.label} className="border border-gray-100 bg-gray-50 p-4">
+                <p className="text-2xl font-extrabold text-primary-950">{item.value}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">{item.label}</p>
+                <p className="text-xs text-gray-500 mt-2 leading-relaxed">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* AI Narrative */}
       <div className="bg-[#EBECE8] p-8 lg:p-12 relative overflow-hidden">

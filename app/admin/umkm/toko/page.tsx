@@ -14,11 +14,7 @@ export default function AdminStoreApprovalPage() {
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/stores', [
-        { id: '1', name: 'Toko Berkah', description: 'Menjual barang sembako', user_id: 'warga_1', status: 'active', created_at: new Date().toISOString() },
-        { id: '2', name: 'Kerajinan Tangan Desa', description: 'Produk anyaman bambu asli', user_id: 'warga_2', status: 'pending', created_at: new Date().toISOString() },
-        { id: '3', name: 'Kue Basah Ibu Ani', description: 'Aneka kue basah tradisional', user_id: 'warga_3', status: 'rejected', created_at: new Date(Date.now() - 86400000).toISOString() },
-      ]).then((data) => {
+    fetchJson('/api/stores', []).then((data) => {
       if (!mounted) return;
       setStores(data);
       setLoading(false);

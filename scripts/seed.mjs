@@ -44,26 +44,9 @@ await seed('reports', [
   { user_id: 'user-warga', author_name: 'Rahmat Hidayat', title: 'Posyandu butuh perlengkapan', description: 'Posyandu Melati kekurangan timbangan bayi dan alat ukur tinggi badan untuk kegiatan rutin bulanan.', category: 'Kesehatan', status: 'in_progress', lat: -5.3435, lng: 105.7945, image_url: img('1576091160550-2173dba999ef'), upvotes: 15, comments_count: 0, created_at: daysAgo(7) },
 ]);
 
-// ---------- STORES + PRODUCTS ----------
-if (await isEmpty('stores')) {
-  const { data: stores } = await sb.from('stores').insert([
-    { user_id: 'user-warga', name: 'Keripik Bu Sari', description: 'Aneka keripik singkong dan pisang khas desa', logo_url: img('1599490659213-e2b9527bd087', 200), status: 'active', created_at: daysAgo(30) },
-    { user_id: 'user-warga', name: 'Tani Makmur', description: 'Hasil pertanian segar langsung dari kebun', logo_url: img('1488459716781-31db52582fe9', 200), status: 'active', created_at: daysAgo(25) },
-  ]).select();
-  console.log(`  [OK] stores: +${stores?.length ?? 0} rows`);
-
-  const s1 = stores?.[0]?.id ?? null;
-  const s2 = stores?.[1]?.id ?? null;
-  await seed('products', [
-    { user_id: 'user-warga', store_id: s1, seller_name: 'Keripik Bu Sari', name: 'Keripik Singkong Original', description: 'Keripik singkong renyah gurih, diproduksi rumahan tanpa pengawet.', price: 15000, phone_number: '6281234567890', whatsapp: '6281234567890', image_url: img('1621447504864-d8686f12c84a'), category: 'Makanan', stock: 50, featured: true, sales_count: 120, rating: 4.8, reviews_count: 32, created_at: daysAgo(20) },
-    { user_id: 'user-warga', store_id: s1, seller_name: 'Keripik Bu Sari', name: 'Keripik Pisang Coklat', description: 'Keripik pisang dengan lapisan coklat premium.', price: 18000, phone_number: '6281234567890', whatsapp: '6281234567890', image_url: img('1605833556294-ea5c7a74f57d'), category: 'Makanan', stock: 35, featured: true, sales_count: 85, rating: 4.7, reviews_count: 21, created_at: daysAgo(18) },
-    { user_id: 'user-warga', store_id: s2, seller_name: 'Tani Makmur', name: 'Beras Organik 5kg', description: 'Beras organik pulen hasil panen petani lokal.', price: 65000, phone_number: '6289876543210', whatsapp: '6289876543210', image_url: img('1586201375761-83865001e31c'), category: 'Pertanian', stock: 20, featured: false, sales_count: 40, rating: 4.9, reviews_count: 12, created_at: daysAgo(15) },
-    { user_id: 'user-warga', store_id: s2, seller_name: 'Tani Makmur', name: 'Madu Hutan Asli', description: 'Madu hutan murni 100% tanpa campuran gula.', price: 85000, phone_number: '6289876543210', whatsapp: '6289876543210', image_url: img('1587049352846-4a222e784d38'), category: 'Pertanian', stock: 15, featured: true, sales_count: 60, rating: 5.0, reviews_count: 18, created_at: daysAgo(10) },
-    { user_id: 'user-warga', store_id: s1, seller_name: 'Keripik Bu Sari', name: 'Anyaman Bambu', description: 'Kerajinan anyaman bambu serbaguna buatan tangan.', price: 45000, phone_number: '6281234567890', whatsapp: '6281234567890', image_url: img('1606744824163-985d376605aa'), category: 'Kerajinan', stock: 10, featured: false, sales_count: 8, rating: 4.6, reviews_count: 4, created_at: daysAgo(8) },
-  ]);
-} else {
-  console.log('  [skip] stores already has data');
-}
+// Marketplace stores/products are intentionally not seeded.
+// Seller data must come from real user registrations and admin verification.
+console.log('  [skip] stores/products demo seed disabled');
 
 // ---------- JOBS ----------
 await seed('jobs', [

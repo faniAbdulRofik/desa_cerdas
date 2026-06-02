@@ -9,6 +9,7 @@ export type Store = {
   user_id: string;
   name: string;
   description?: string;
+  address?: string;
   logo_url?: string;
   status: 'pending' | 'active' | 'rejected';
   created_at: string;

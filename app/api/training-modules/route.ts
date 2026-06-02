@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteRow, insertRow, jsonError, listRows, updateRow } from '@/lib/api-helpers';
+import { normalizeTrainingModule, normalizeTrainingModules } from '@/lib/training-modules';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     order: { column: 'created_at', ascending: false },
   });
 
-  return NextResponse.json(modules);
+  return NextResponse.json(normalizeTrainingModules(modules as any[]));
 }
 
 export async function POST(request: NextRequest) {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await insertRow('training_modules', fallback, fallback);
   if (error) return jsonError(error.message);
 
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(normalizeTrainingModule(data as any), { status: 201 });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -53,7 +54,7 @@ export async function PATCH(request: NextRequest) {
 
   const { data, error } = await updateRow('training_modules', id, updates, { id, ...updates });
   if (error) return jsonError(error.message);
-  return NextResponse.json(data);
+  return NextResponse.json(normalizeTrainingModule(data as any));
 }
 
 export async function DELETE(request: NextRequest) {

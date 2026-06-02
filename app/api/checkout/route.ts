@@ -1,22 +1,56 @@
 import { NextResponse } from 'next/server';
+import { getCurrentAuthUser } from '@/lib/auth-server';
 import { getSupabaseServerClient } from '@/lib/supabase-server';
 
 export async function POST(request: Request) {
   try {
+    const user = await getCurrentAuthUser();
+    if (!user) return NextResponse.json({ error: 'Login diperlukan untuk checkout.' }, { status: 401 });
+
     const body = await request.json();
-    const { buyer_id, store_id, total_amount, items, customer_details, payment_method } = body;
+    const { store_id, total_amount, items, customer_details, payment_method } = body;
+    const supabase = getSupabaseServerClient();
+
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database is not configured' }, { status: 500 });
+    }
+
+    const { data: store, error: storeError } = await supabase
+      .from('stores')
+      .select('id, status')
+      .eq('id', store_id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (storeError || !store) {
+      return NextResponse.json({ error: 'Toko belum aktif atau tidak ditemukan.' }, { status: 400 });
+    }
+
+    const productIds = Array.isArray(items) ? items.map((item: any) => item.id).filter(Boolean) : [];
+    if (productIds.length === 0) {
+      return NextResponse.json({ error: 'Keranjang kosong.' }, { status: 400 });
+    }
+
+    const { data: validProducts, error: productsError } = await supabase
+      .from('products')
+      .select('id')
+      .eq('store_id', store.id)
+      .in('id', productIds);
+
+    if (productsError || (validProducts?.length ?? 0) !== productIds.length) {
+      return NextResponse.json({ error: 'Produk tidak valid untuk toko ini.' }, { status: 400 });
+    }
 
     // 1. Generate Order ID
     const order_id = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const isCOD = payment_method === 'cod';
-    const supabase = getSupabaseServerClient();
 
     // 2. Insert order into Supabase — fail loudly if DB fails
-    if (supabase) {
+    {
       const { error: orderError } = await supabase.from('orders').insert([{
         id: order_id,
-        buyer_id,
-        store_id: store_id || null,
+        buyer_id: user.id,
+        store_id: store.id,
         total_amount,
         status: isCOD ? 'diproses' : 'pending',
         payment_method: payment_method || 'midtrans',
@@ -59,6 +93,11 @@ export async function POST(request: Request) {
     const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
 
     if (!serverKey) {
+      await supabase
+        .from('orders')
+        .update({ status: 'terbayar', updated_at: new Date().toISOString() })
+        .eq('id', order_id);
+
       return NextResponse.json({
         success: true,
         token: 'MIDTRANS_NOT_CONFIGURED',
