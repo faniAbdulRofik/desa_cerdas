@@ -17,10 +17,8 @@ export async function POST(request: Request) {
     }
 
     let orderStatus = 'pending';
-    if (transaction_status === 'capture') {
-      if (fraud_status === 'accept') {
-          orderStatus = 'terbayar';
-      }
+    if (transaction_status === 'capture' && fraud_status !== 'deny') {
+      orderStatus = 'terbayar';
     } else if (transaction_status === 'settlement') {
       orderStatus = 'terbayar';
     } else if (transaction_status === 'cancel' || transaction_status === 'deny' || transaction_status === 'expire') {
@@ -32,7 +30,10 @@ export async function POST(request: Request) {
     // Update order status in Supabase securely (if available)
     const supabase = getSupabaseServerClient();
     if (supabase) {
-       const { error } = await supabase.from('orders').update({ status: orderStatus }).eq('id', order_id);
+       const { error } = await supabase
+         .from('orders')
+         .update({ status: orderStatus, updated_at: new Date().toISOString() })
+         .eq('id', order_id);
        if (error) console.error("Midtrans webhook Supabase error:", error);
     }
 

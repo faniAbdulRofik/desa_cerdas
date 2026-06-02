@@ -65,11 +65,14 @@ create table if not exists public.stores (
   user_id text not null,
   name text not null,
   description text,
+  address text,
   logo_url text,
   status text not null default 'pending' check (status in ('pending', 'active', 'rejected')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.stores add column if not exists address text;
 
 create table if not exists public.products (
   id text primary key default gen_random_uuid()::text,
@@ -148,6 +151,16 @@ create table if not exists public.community_actions (
   report_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists public.action_participants (
+  id text primary key default gen_random_uuid()::text,
+  action_id text not null references public.community_actions(id) on delete cascade,
+  user_id text not null,
+  name text not null,
+  email text,
+  created_at timestamptz not null default now(),
+  unique (action_id, user_id)
 );
 
 create table if not exists public.emergency_alerts (

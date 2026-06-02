@@ -41,7 +41,7 @@ export default function SellerOrdersPage() {
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/orders', []).then((data) => {
+    fetchJson('/api/orders?owner=me', []).then((data) => {
       if (mounted) setOrders(data);
     });
     return () => { mounted = false; };

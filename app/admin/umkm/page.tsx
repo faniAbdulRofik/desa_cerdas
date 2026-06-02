@@ -18,7 +18,7 @@ export default function AdminUMKMPage() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    fetchJson('/api/products', []).then((data) => {
+    fetchJson('/api/products?scope=admin', []).then((data) => {
       if (!mounted) return;
       setProducts(data);
       setLoading(false);

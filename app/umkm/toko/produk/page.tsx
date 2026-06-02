@@ -12,7 +12,7 @@ export default function ManageProductsPage() {
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/products', []).then((data) => {
+    fetchJson('/api/products?owner=me', []).then((data) => {
       if (mounted) setProducts(data);
     });
     return () => { mounted = false; };

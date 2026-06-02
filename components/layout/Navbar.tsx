@@ -11,7 +11,7 @@ import {
   GraduationCap, Users, ShieldCheck,
   TrendingUp, Map, Briefcase, Activity, Plus, Menu, X, ChevronDown,
   LogIn, Instagram, Linkedin, Zap, Landmark, Newspaper, ShoppingCart,
-  Store, LogOut, User, ChevronRight, Megaphone, Camera, PieChart
+  Store, LogOut, User, ChevronRight, Megaphone, Camera, PieChart, Settings
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { setLocaleCookie } from '@/app/actions/locale';
@@ -160,6 +160,10 @@ function ProfileButton() {
             <Link href="/umkm/pesanan" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[12px] text-gray-700 hover:bg-gray-50 transition-colors">
               <ShoppingBag className="w-4 h-4 text-gray-400" />
               <span>Pesanan Saya</span>
+            </Link>
+            <Link href="/akun/pengaturan" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[12px] text-gray-700 hover:bg-gray-50 transition-colors">
+              <Settings className="w-4 h-4 text-gray-400" />
+              <span>Pengaturan Akun</span>
             </Link>
             <Link href="/laporan" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[12px] text-gray-700 hover:bg-gray-50 transition-colors">
               <MessageSquare className="w-4 h-4 text-gray-400" />

@@ -23,14 +23,32 @@ export default function UMKMPage() {
   ];
 
   const [products, setProducts] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    activeStores: 0,
+    verifiedStores: 0,
+    soldProducts: 0,
+    averageRating: 0,
+    reviewsCount: 0,
+  });
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/products', []).then((data) => {
-      if (mounted) setProducts(data);
+    Promise.all([
+      fetchJson('/api/products', []),
+      fetchJson('/api/umkm/stats', {
+        activeStores: 0,
+        verifiedStores: 0,
+        soldProducts: 0,
+        averageRating: 0,
+        reviewsCount: 0,
+      }),
+    ]).then(([productData, statsData]) => {
+      if (!mounted) return;
+      setProducts(productData);
+      setStats(statsData);
     });
     return () => { mounted = false; };
   }, []);
@@ -87,7 +105,7 @@ export default function UMKMPage() {
               <div className="pr-2">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Terverifikasi</p>
                 <p className="text-sm font-bold text-gray-800">
-                  {products.length}+ UMKM Lokal
+                  {stats.verifiedStores} UMKM Lokal
                 </p>
               </div>
             </div>
@@ -99,9 +117,9 @@ export default function UMKMPage() {
         {/* Stats strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-8">
           {[
-            { label: t('stat_active'), value: products.length, color: 'bg-primary-50 text-primary-700 border-primary-100' },
-            { label: t('stat_featured'), value: featured.length, color: 'bg-accent-50 text-amber-700 border-accent-100' },
-            { label: t('stat_rating'), value: '4.8', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+            { label: 'UMKM Aktif', value: stats.activeStores, color: 'bg-primary-50 text-primary-700 border-primary-100' },
+            { label: 'Produk Terjual', value: stats.soldProducts, color: 'bg-accent-50 text-amber-700 border-accent-100' },
+            { label: 'Rating Rata-Rata', value: stats.reviewsCount > 0 ? stats.averageRating.toFixed(1) : '-', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
           ].map((s) => (
             <div key={s.label} className={`p-4 sm:p-4 text-center border flex flex-row sm:flex-col items-center justify-between sm:justify-center ${s.color}`}>
               <div className="text-[10px] font-bold tracking-widest uppercase sm:mt-1 order-2 sm:order-2 text-right sm:text-center max-w-[50%] sm:max-w-none">{s.label}</div>

@@ -22,6 +22,8 @@ function OrderList() {
   const statusParam = searchParams.get('status');
   const orderIdParam = searchParams.get('id');
   const [orders, setOrders] = useState<any[]>([]);
+  const [paymentSyncing, setPaymentSyncing] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState('');
   
   // Modals State
   const [cancelModal, setCancelModal] = useState<{open: boolean, orderId: string, reason: string}>({open: false, orderId: '', reason: ''});
@@ -31,11 +33,42 @@ function OrderList() {
 
   useEffect(() => {
     let mounted = true;
-    fetchJson('/api/orders?buyer_id=user-warga', []).then((data) => {
+
+    async function loadOrders() {
+      if (statusParam === 'success' && orderIdParam) {
+        setPaymentSyncing(true);
+        const paidResponse = await fetch(`/api/orders/${orderIdParam}/mark-paid`, {
+          method: 'POST',
+        })
+          .then(async (res) => ({
+            ok: res.ok,
+            data: await res.json().catch(() => ({})),
+          }))
+          .catch(() => null);
+
+        const paidOrder = paidResponse?.ok ? paidResponse.data : null;
+
+        if (mounted && paidOrder?.id) {
+          setOrders((prev) => {
+            const exists = prev.some((order) => order.id === paidOrder.id);
+            return exists
+              ? prev.map((order) => (order.id === paidOrder.id ? paidOrder : order))
+              : [paidOrder, ...prev];
+          });
+          setPaymentNotice('Pembayaran berhasil dan pesanan sudah ditandai terbayar.');
+        } else if (mounted) {
+          setPaymentNotice(paidResponse?.data?.error || 'Pembayaran sedang diverifikasi. Status pesanan akan diperbarui otomatis setelah konfirmasi diterima.');
+        }
+        if (mounted) setPaymentSyncing(false);
+      }
+
+      const data = await fetchJson('/api/orders?buyer=me', []);
       if (mounted) setOrders(data);
-    });
+    }
+
+    loadOrders();
     return () => { mounted = false; };
-  }, []);
+  }, [orderIdParam, statusParam]);
 
   async function submitCancel() {
     if (!cancelModal.reason) return alert('Pilih atau tulis alasan pembatalan');
@@ -83,20 +116,29 @@ function OrderList() {
 
   async function submitReview() {
     setActionLoading(true);
-    await fetch('/api/reviews', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: reviewModal.orderId,
-        product_id: reviewModal.productId,
-        buyer_id: 'user-warga',
-        rating: reviewModal.rating,
-        comment: reviewModal.comment,
-      }),
-    }).catch(() => undefined);
-    setOrders(prev => prev.map(o => o.id === reviewModal.orderId ? { ...o, is_reviewed: true } : o));
-    setReviewModal({open: false, orderId: '', productId: '', rating: 5, comment: ''});
-    setActionLoading(false);
+    try {
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: reviewModal.orderId,
+          product_id: reviewModal.productId,
+          rating: reviewModal.rating,
+          comment: reviewModal.comment,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        alert(result.error || 'Ulasan gagal disimpan. Silakan coba lagi.');
+        return;
+      }
+
+      setOrders(prev => prev.map(o => o.id === reviewModal.orderId ? { ...o, is_reviewed: true } : o));
+      setReviewModal({open: false, orderId: '', productId: '', rating: 5, comment: ''});
+    } finally {
+      setActionLoading(false);
+    }
   }
 
   return (
@@ -107,8 +149,11 @@ function OrderList() {
                <CheckCircle2 className="w-6 h-6 text-green-600" />
             </div>
             <div>
-               <h3 className="text-sm font-bold uppercase tracking-widest text-green-900 mb-1">Pembayaran Berhasil / COD Terkonfirmasi!</h3>
-               <p className="text-green-800 text-sm">Pesanan Anda dengan ID <strong>{orderIdParam || 'BARU'}</strong> sedang menunggu diproses.</p>
+               <h3 className="text-sm font-bold uppercase tracking-widest text-green-900 mb-1">Pembayaran Berhasil</h3>
+               <p className="text-green-800 text-sm">
+                 Pesanan <strong>{orderIdParam || 'BARU'}</strong>{' '}
+                 {paymentSyncing ? 'sedang disinkronkan...' : paymentNotice || 'sedang diverifikasi.'}
+               </p>
             </div>
           </div>
         )}
@@ -133,6 +178,8 @@ function OrderList() {
                const productName = firstItem?.products?.name || 'Produk Marketplace';
                const productImage = firstItem?.products?.image_url || '';
                const totalItems = orderItems.reduce((s: number, i: any) => s + (i.quantity || 1), 0);
+               const subtotal = orderItems.reduce((s: number, i: any) => s + Number(i.price || 0) * Number(i.quantity || 1), 0);
+               const shippingCost = Math.max(0, Number(order.total_amount || 0) - subtotal);
                
                const canCancel = ['pending', 'terbayar', 'diproses'].includes(order.status) && !order.cancellation_status;
                const isCancelRequested = order.cancellation_status === 'requested';
@@ -181,6 +228,64 @@ function OrderList() {
                              </p>
                           </div>
                        </div>
+                    </div>
+
+                    <div className="px-6 pb-6">
+                      <div className="border border-gray-200 bg-gray-50/60 p-4 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                          <div>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">Metode Bayar</p>
+                            <p className="font-semibold text-gray-800 uppercase">{order.payment_method || 'midtrans'}</p>
+                          </div>
+                          {order.shipping_address && (
+                            <div className="md:col-span-2">
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1">Alamat Pengiriman</p>
+                              <p className="font-semibold text-gray-800 leading-relaxed">{order.shipping_address}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Detail Produk</p>
+                          {orderItems.map((item: any, idx: number) => (
+                            <div key={item.id || idx} className="flex items-center justify-between gap-3 border-t border-gray-200 pt-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="relative w-10 h-10 bg-white border border-gray-200 shrink-0 overflow-hidden">
+                                  {item.products?.image_url ? (
+                                    <Image src={item.products.image_url} alt="" fill className="object-cover" />
+                                  ) : (
+                                    <Package className="w-4 h-4 text-gray-300 absolute left-3 top-3" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-gray-800 truncate">{item.products?.name || 'Produk'}</p>
+                                  <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+                                    {item.quantity}x @ {formatRupiah(item.price)}
+                                  </p>
+                                </div>
+                              </div>
+                              <p className="text-sm font-bold text-gray-900 shrink-0">
+                                {formatRupiah(Number(item.price || 0) * Number(item.quantity || 1))}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="border-t border-gray-200 pt-3 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Subtotal Produk</span>
+                            <span className="font-semibold text-gray-800">{formatRupiah(subtotal)}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Ongkos Kirim</span>
+                            <span className="font-semibold text-gray-800">{shippingCost > 0 ? formatRupiah(shippingCost) : '-'}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm font-bold text-primary-900 pt-1">
+                            <span>Total Bayar</span>
+                            <span>{formatRupiah(order.total_amount)}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     {order.awb_number && (

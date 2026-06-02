@@ -1,27 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Store, LayoutDashboard, Package, PlusSquare, ShoppingBag,
-  LogOut, Menu, X
+  LogOut, Menu, X, Loader2, Clock, XCircle, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { fetchJson } from '@/lib/api-client';
 
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
-  const { user, isSignedIn } = useAuth();
+  const { user, isSignedIn, loading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [store, setStore] = useState<any | null>(null);
+  const [checkingStore, setCheckingStore] = useState(true);
   const pathname = usePathname();
 
-  // Demo store always active
-  const store = {
-    name: 'Toko Demo DesaMind',
-    status: 'active',
-  };
+  useEffect(() => {
+    let mounted = true;
+
+    if (loading) return;
+    if (!isSignedIn) {
+      setStore(null);
+      setCheckingStore(false);
+      return;
+    }
+
+    const loadStore = () => fetchJson('/api/stores?owner=me', [] as any[]).then((stores) => {
+      if (!mounted) return;
+      setStore(stores[0] ?? null);
+      setCheckingStore(false);
+    });
+
+    setCheckingStore(true);
+    loadStore();
+    window.addEventListener('store-change', loadStore);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('store-change', loadStore);
+    };
+  }, [isSignedIn, loading]);
+
+  if (loading || checkingStore) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-14 lg:pt-16 pb-16 px-4 flex items-center justify-center">
+        <Loader2 className="w-7 h-7 animate-spin text-primary-700" />
+      </div>
+    );
+  }
 
   if (!isSignedIn) {
     return (
@@ -38,7 +69,43 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     );
   }
 
+  if (!store) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-14 lg:pt-16 pb-16 px-4">
+        <div className="max-w-md mx-auto text-center bg-white border border-gray-200 p-10 mt-10 shadow-sm">
+          <Store className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-primary-900 mb-3">Belum Ada Toko</h1>
+          <p className="text-sm text-gray-500 mb-6">Daftarkan toko terlebih dahulu. Dashboard akan aktif setelah admin memverifikasi pendaftaran Anda.</p>
+          <Link href="/umkm/daftar" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-800 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary-950 transition-colors">
+            Daftar Toko
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
+  if (store.status !== 'active') {
+    const isPending = store.status === 'pending';
+    const StatusIcon = isPending ? Clock : XCircle;
+    return (
+      <div className="min-h-screen bg-gray-50 pt-14 lg:pt-16 pb-16 px-4">
+        <div className="max-w-md mx-auto text-center bg-white border border-gray-200 p-10 mt-10 shadow-sm">
+          <StatusIcon className={cn('w-12 h-12 mx-auto mb-4', isPending ? 'text-amber-500' : 'text-red-500')} />
+          <h1 className="text-xl font-bold text-primary-900 mb-3">
+            {isPending ? 'Toko Menunggu Verifikasi' : 'Toko Belum Aktif'}
+          </h1>
+          <p className="text-sm text-gray-500 mb-6">
+            {isPending
+              ? 'Pendaftaran toko Anda sudah masuk dan sedang menunggu persetujuan admin.'
+              : 'Toko Anda belum aktif. Hubungi admin desa untuk informasi lebih lanjut.'}
+          </p>
+          <Link href="/umkm" className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 transition-colors">
+            Kembali ke UMKM
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Active Store Dashboard Layout
   const navItems = [
@@ -46,6 +113,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     { label: 'Tambah Produk', href: '/umkm/toko/produk/tambah', icon: PlusSquare },
     { label: 'Kelola Produk', href: '/umkm/toko/produk', icon: Package },
     { label: 'Pesanan', href: '/umkm/toko/pesanan', icon: ShoppingBag },
+    { label: 'Pengaturan', href: '/umkm/toko/pengaturan', icon: Settings },
   ];
 
   const SidebarContent = (
@@ -55,8 +123,12 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           <Image src="/logo.png" alt="DesaMind" width={140} height={36} className="h-8 w-auto object-contain mb-2" />
         </Link>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center justify-center w-5 h-5 border border-primary-200 bg-primary-50 text-primary-800">
-            <Store className="w-3 h-3" />
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full overflow-hidden border border-primary-200 bg-primary-50 text-primary-800">
+            {store?.logo_url ? (
+              <Image src={store.logo_url} alt={store.name} width={20} height={20} className="w-full h-full object-cover" unoptimized />
+            ) : (
+              <Store className="w-3 h-3" />
+            )}
           </span>
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">DASHBOARD TOKO</p>
         </div>
@@ -82,6 +154,10 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       </nav>
 
       <div className="px-4 py-6 border-t border-gray-100 space-y-2 bg-gray-50/30 shrink-0">
+        <Link href="/akun/pengaturan" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-transparent transition-all">
+          <Settings className="w-4 h-4 text-gray-400 shrink-0" />
+          Pengaturan Akun
+        </Link>
         <Link href="/umkm" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all">
           <LogOut className="w-4 h-4 text-red-500 shrink-0" />
           Keluar Ke UMKM
@@ -121,7 +197,13 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
             </div>
             {/* Desktop breadcrumb/title */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-primary-50 rounded-full border border-primary-100">
-              <Store className="w-3 h-3 text-primary-600" />
+              {store?.logo_url ? (
+                <span className="relative w-4 h-4 rounded-full overflow-hidden bg-white border border-primary-100">
+                  <Image src={store.logo_url} alt={store.name} fill className="object-cover" unoptimized />
+                </span>
+              ) : (
+                <Store className="w-3 h-3 text-primary-600" />
+              )}
               <span className="text-[10px] uppercase tracking-widest font-bold text-primary-700">{store?.name || 'Toko UMKM'}</span>
             </div>
           </div>

@@ -256,6 +256,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Settings className="w-4.5 h-4.5 text-gray-400" />
           {t('settings')}
         </Link>
+        <Link href="/akun/pengaturan" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all border border-transparent">
+          <Settings className="w-4.5 h-4.5 text-gray-400" />
+          Pengaturan Akun
+        </Link>
         <button onClick={async () => { await logout(); router.replace('/auth/login'); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all">
           <LogOut className="w-4.5 h-4.5 text-red-500" />
           {t('logout')}

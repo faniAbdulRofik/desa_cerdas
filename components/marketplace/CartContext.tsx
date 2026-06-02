@@ -8,6 +8,7 @@ import {
   type CartItem,
   type MarketplaceProduct,
   getCart,
+  saveCart,
   addToCart as addToCartUtil,
   removeFromCart as removeFromCartUtil,
   updateCartQty as updateCartQtyUtil,
@@ -19,9 +20,11 @@ interface CartContextType {
   items: CartItem[];
   total: number;
   count: number;
+  isValidating: boolean;
   addItem: (product: MarketplaceProduct, qty?: number) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
+  validateCart: () => Promise<CartItem[]>;
   clear: () => void;
 }
 
@@ -29,10 +32,57 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const validateCart = useCallback(async () => {
+    const current = getCart();
+    if (current.length === 0) {
+      setItems([]);
+      return [];
+    }
+
+    setIsValidating(true);
+    try {
+      const checked = await Promise.all(
+        current.map(async (item) => {
+          const response = await fetch(`/api/products/${item.product.id}`, { cache: 'no-store' });
+          if (!response.ok) return null;
+
+          const product = (await response.json()) as MarketplaceProduct;
+          const stock = Number(product.stock ?? item.product.stock ?? 0);
+          if (stock <= 0) return null;
+
+          return {
+            product: {
+              ...item.product,
+              ...product,
+              stock,
+            },
+            quantity: Math.min(Math.max(1, item.quantity), stock),
+          };
+        })
+      );
+
+      const validItems = checked.filter(Boolean) as CartItem[];
+      saveCart(validItems);
+      setItems(validItems);
+      return validItems;
+    } catch {
+      setItems(current);
+      return current;
+    } finally {
+      setIsValidating(false);
+    }
+  }, []);
 
   useEffect(() => {
     setItems(getCart());
-  }, []);
+    validateCart();
+
+    const handleFocus = () => validateCart();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [validateCart]);
 
   const addItem = useCallback((product: MarketplaceProduct, qty = 1) => {
     const updated = addToCartUtil(product, qty);
@@ -60,9 +110,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         items,
         total: cartTotal(items),
         count: items.reduce((s, i) => s + i.quantity, 0),
+        isValidating,
         addItem,
         removeItem,
         updateQty,
+        validateCart,
         clear,
       }}
     >

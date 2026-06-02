@@ -14,13 +14,14 @@ function ProductForm() {
 
   const [saving, setSaving] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiError, setAiError] = useState('');
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', category: 'Makanan', image_url: '', phone_number: '', stock: '10',
   });
 
   useEffect(() => {
     if (editId) {
-      fetchJson(`/api/products/${editId}`, null as any).then((product) => {
+      fetchJson(`/api/products/${editId}?owner=me`, null as any).then((product) => {
         if (!product) return;
         setFormData({
           name: product.name ?? '',
@@ -38,23 +39,26 @@ function ProductForm() {
   /** After an image is uploaded, ask the AI to auto-fill product fields. */
   async function runAIGeneration(imageUrl: string) {
     setIsGeneratingAI(true);
+    setAiError('');
     try {
       const aiRes = await fetch('/api/ai/generate-product', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageUrl }),
       });
-      if (aiRes.ok) {
-        const data = await aiRes.json();
-        setFormData((prev) => ({
-          ...prev,
-          name: prev.name || data.name || '',
-          description: prev.description || data.description || '',
-          category: data.category || prev.category,
-        }));
+      const data = await aiRes.json().catch(() => ({}));
+      if (!aiRes.ok) {
+        throw new Error(data.error || 'AI gagal menganalisis gambar.');
       }
+      setFormData((prev) => ({
+        ...prev,
+        name: data.name || prev.name,
+        description: data.description || prev.description,
+        category: data.category || prev.category,
+      }));
     } catch (error) {
       console.error('AI Generation Error', error);
+      setAiError(error instanceof Error ? error.message : 'AI gagal menganalisis gambar.');
     } finally {
       setIsGeneratingAI(false);
     }
@@ -71,8 +75,6 @@ function ProductForm() {
       ...formData,
       price: Number(formData.price),
       stock: Number(formData.stock),
-      seller_name: 'Toko Desa',
-      user_id: 'user-warga',
     };
     const response = await fetch('/api/products', {
       method: editId ? 'PUT' : 'POST',
@@ -81,7 +83,10 @@ function ProductForm() {
     });
     setSaving(false);
     if (response.ok) router.push('/umkm/toko/produk');
-    else alert('Gagal menyimpan produk.');
+    else {
+      const data = await response.json().catch(() => ({}));
+      alert(data.error || 'Gagal menyimpan produk.');
+    }
   }
 
   return (
@@ -119,6 +124,13 @@ function ProductForm() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-800 mb-0.5">Asisten AI Sedang Bekerja</p>
                 <p className="text-[13px] text-indigo-600 font-medium">Menganalisis gambar dan menyusun deskripsi produk otomatis...</p>
               </div>
+            </div>
+          )}
+
+          {aiError && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-800 mb-1">AI tidak mengisi otomatis</p>
+              <p className="text-[12px] text-amber-700 leading-relaxed">{aiError}</p>
             </div>
           )}
 
